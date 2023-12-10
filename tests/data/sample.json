@@ -1,0 +1,127 @@
+{
+    "pages": {
+        "0": {
+            "uuid": "0",
+            "page_type": "start",
+            "action": "start",
+            "image": {
+                "path": "start.png",
+                "url": null,
+                "description": "This is the start image"
+            },
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "description": {
+                "page": "This is the start page",
+                "action": "This is the start action",
+                "image": "This is the start image"
+            }
+        },
+        "1": {
+            "uuid": "1",
+            "page_type": "action",
+            "action": "action1",
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "image": {
+                "path": "1.png",
+                "url": null,
+                "description": "This is the action1 image"
+            },
+            "description": {
+                "page": "This is the action1 page",
+                "action": "This is the action1 action",
+                "image": "This is the action1 image"
+            }
+        },
+        "2": {
+            "uuid": "2",
+            "page_type": "end",
+            "action": "action2",
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "image": {
+                "path": "2.png",
+                "url": null,
+                "description": "This is the action2 image"
+            },
+            "description": {
+                "page": "This is the action2 page",
+                "action": "This is the action2 action",
+                "image": "This is the action2 image"
+            }
+        },
+        "3": {
+            "uuid": "3",
+            "page_type": "end",
+            "action": "action3",
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "image": {
+                "path": "3.png",
+                "url": null,
+                "description": "This is the action3 image"
+            },
+            "description": {
+                "page": "This is the action3 page",
+                "action": "This is the action3 action",
+                "image": "This is the action3 image"
+            }
+        },
+        "4": {
+            "uuid": "4",
+            "page_type": "action",
+            "action": "action4",
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "image": null,
+            "description": {
+                "page": "This is the action4 page",
+                "action": "This is the action4 action",
+                "image": "This is the action4 image"
+            }
+        }
+    },
+    "root": {
+        "page_uuid": "0",
+        "children": [
+            {
+                "page_uuid": "1",
+                "children": [
+                    {
+                        "page_uuid": "2",
+                        "children": []
+                    },
+                    {
+                        "page_uuid": "3",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "page_uuid": "4",
+                "children": []
+            }
+        ]
+    }
+}
