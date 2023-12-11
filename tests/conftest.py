@@ -6,11 +6,16 @@ from pytest import fixture
 
 
 @fixture
-def sample_data() -> Dict[str, Any]:
+def sample_data_file() -> str:
     # Get this file folder
     folder = os.path.dirname(os.path.abspath(__file__))
-    data_folder = os.path.join(folder, "data", "sample.json")
-    with open(data_folder) as json_file:
+    return os.path.join(folder, "data", "sample.json")
+
+
+@fixture
+def sample_data(sample_data_file: str) -> Dict[str, Any]:
+    # Get this file folder
+    with open(sample_data_file) as json_file:
         data = json.load(json_file)
     return data
 

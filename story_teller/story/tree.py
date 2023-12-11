@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
-from story_teller.story.page import PageRepository
+from story_teller.story.page import Page, PageRepository
 
 
 class TreeNode:
@@ -15,11 +15,13 @@ class TreeNode:
         self.children: List[TreeNode] = []
 
     @classmethod
-    def from_dict(cls, node_data: Dict[str, Any], parent: Optional[TreeNode] = None) -> TreeNode:
+    def from_dict(cls,
+                  node_data: Dict[str, Any], parent: Optional[TreeNode] = None
+                  ) -> TreeNode:
         """Create a tree node from a dictionary."""
         node = cls(page_uuid=node_data["page_uuid"], parent=parent)
         for child in node_data["children"]:
-            node.add_child(cls.from_dict(child, parent=node))
+            node.add_node(cls.from_dict(child, parent=node))
         return node
 
     @classmethod
@@ -30,54 +32,133 @@ class TreeNode:
             "children": [cls.to_dict(child) for child in node.children]
         }
 
-    def add_child(self, child: TreeNode) -> None:
+    def add_node(self, child: TreeNode) -> None:
         """Add a child to the node."""
+        child.parent = self
         self.children.append(child)
 
-    def remove_child(self, child_uuid: str) -> None:
+    def _cascade_remove(self, node: TreeNode) -> List[str]:
+        """Remove a node and all its children. Return the moved uuids."""
+        removed_uuids = []
+        for child in node.children:
+            removed_uuids += self._cascade_remove(child)
+            del child
+        node.parent = None
+        removed_uuids.append(node.page_uuid)
+        return removed_uuids
+
+    def remove_node(self, child_uuid: str) -> List[str]:
         """Remove a child from the node."""
-        self.children = [
-            child for child in self.children if child.page_uuid != child_uuid
-        ]
+        removed_child = None
+        new_children = []
+        for child in self.children:
+            if child.page_uuid == child_uuid:
+                removed_child = child
+            else:
+                new_children.append(child)
+        self.children = new_children
+
+        if removed_child is not None:
+            removed_uuids = self._cascade_remove(removed_child)
+            del removed_child
+        else:
+            removed_uuids = []
+        return removed_uuids
 
     def __repr__(self) -> str:
+        if len(self.children) == 0:
+            return f"TreeNode(page={self.page_uuid})"
         return f"TreeNode(page={self.page_uuid}, children={self.children})"
 
     def __str__(self):
         return self.__repr__()
 
 
-class Tree:
-    """A tree of pages."""
+class StoryTree:
+    """A tree of pages. This is the interface for the handle the story data."""
 
     def __init__(self,
+                 pages_repository: PageRepository,
                  root: Optional[TreeNode] = None,
-                 pages_repository: Optional[PageRepository] = None,
                  tree_source: Optional[str] = None) -> None:
         self.tree_source = tree_source
         self.root = root
         self.pages = pages_repository
 
+    def add_page(self,
+                 page: Page, parent_node: Optional[TreeNode] = None
+                 ) -> None:
+        self.pages.add_page(page)
+        new_node = TreeNode(page.uuid, parent=parent_node)
+        if parent_node is None:
+            self.root = new_node
+        else:
+            parent_node.add_node(new_node)
+
+    def get_root(self) -> Optional[TreeNode]:
+        return self.root
+
+    def get_page(self, uuid: str) -> Optional[Page]:
+        return self.pages.get_page(uuid)
+
+    def search_page_node(self,
+                         uuid: str, node: Optional[TreeNode] = None
+                         ) -> Optional[TreeNode]:
+        """Get the node of a page."""
+        node = node or self.root
+        if node is None:
+            return None
+        elif node.page_uuid == uuid:
+            return node
+        else:
+            for child in node.children:
+                result = self.search_page_node(uuid, node=child)
+                if result is not None:
+                    return result
+            return None
+
+    def remove_page(self, uuid: str, node: Optional[TreeNode] = None) -> None:
+        """Remove a page from the tree."""
+        node = node or self.search_page_node(uuid)
+        if node is None:
+            raise ValueError(f"Page with uuid {uuid} does not exist.")
+        # Remove the node from the tree nodes
+        if node.parent is None:
+            self.root = None
+        else:
+            # Remove the node from the parent recursively
+            removed_uuids = node.parent.remove_node(uuid)
+        # Remove the page and its children from the repository
+        for removed_uuid in removed_uuids:
+            self.pages.remove_page(removed_uuid)
+
+
+class StoryTreeFactory:
+    """A factory for creating story trees."""
+
     @classmethod
-    def from_json(cls, tree_source: str) -> Tree:
-        """Create a tree from a JSON string."""
-        tree_data = json.loads(tree_source)
-        root = tree_data["root"]
+    def from_json(cls, json_file: str) -> StoryTree:
+        """Create a tree from a JSON file."""
+        with open(json_file, "r") as f:
+            tree_data = json.load(f)
+        tree_source = json_file
+        root = TreeNode.from_dict(tree_data["root"])
         pages = PageRepository.from_dict(tree_data["pages"])
-        tree = cls(root=root, pages=pages, tree_source=tree_source)
+        tree = StoryTree(
+            root=root, pages_repository=pages, tree_source=tree_source
+        )
         return tree
 
-    def __repr__(self) -> str:
-        return f"Tree(root={self.root}, pages={self.pages})"
 
-    def __str__(self):
-        return self.__repr__()
+class StoryTreeWriter:
+    """Save a tree to persistent storage."""
 
-    def add_page():
-        pass
-
-    def get_page():
-        pass
-
-    def remove_page():
-        pass
+    @classmethod
+    def to_json(cls, tree: StoryTree, json_file: str) -> None:
+        """Write a tree to a JSON file."""
+        tree_data = {
+            "root": TreeNode.to_dict(tree.root),
+            "pages": PageRepository.to_dict(tree.pages)
+        }
+        with open(json_file, "w") as f:
+            json.dump(tree_data, f, indent=4)
