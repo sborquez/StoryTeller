@@ -95,6 +95,7 @@ class Event(pydantic.BaseModel):
 
     This class is used to represent an event.
     """
-
+    # The event type
     event_type: EventType
-    payload: Dict[str, Any]
+    # Additional event data
+    payload: pydantic.Field(Dict[str, Any], default_factory=dict)
