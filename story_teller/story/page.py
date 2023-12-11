@@ -149,12 +149,24 @@ class PageRepository:
             raise ValueError(f"Page with uuid {page.uuid} already exists.")
         self.pages[page.uuid] = page
 
-    def get_page(self, uuid: str) -> Page:
+    def get_page(self, uuid: str) -> Optional[Page]:
         """Get a page from the repository."""
-        return self.pages[uuid]
+        return self.pages.get(uuid, None)
 
     def remove_page(self, uuid: str) -> None:
         """Remove a page from the repository."""
         if uuid not in self.pages:
             raise ValueError(f"Page with uuid {uuid} does not exist.")
         del self.pages[uuid]
+
+    def __getitem__(self, uuid: str) -> Optional[Page]:
+        """Get a page from the repository."""
+        return self.get_page(uuid)
+
+    def __contains__(self, uuid: str) -> bool:
+        """Check if a page is in the repository."""
+        return uuid in self.pages
+
+    def __len__(self) -> int:
+        """Get the number of pages in the repository."""
+        return len(self.pages)
