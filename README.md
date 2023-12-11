@@ -56,6 +56,14 @@ Use the `.env` file to set up the environment variables. The following variables
 - `STORYTELLER_GUI_HEIGHT`: the height of the GUI window (default: `600`)
 - `STORYTELLER_GUI_FULLSCREEN`: whether to run the GUI in fullscreen mode or not (default: `False`)
 
+### Testing
+
+To run the tests, run the following command:
+
+```bash
+python -m pytest
+```
+
 ### Running the GUI
 
 To run the GUI, run the following command:
@@ -70,9 +78,9 @@ python -m story_teller
 
 The story data structure is composed of three main components:
 
-- `Page`: a page is a single node in the story tree. It contains an unique ID, the description text of the page, the image, the action that led to that page, the karma points associated this page, and the list of possible pages that can be reached from this page.
+- `Page`: a page is a single node in the story tree. It contains an unique ID, the description text of the page, the image, the action that led to that page, and the karma points associated this page.
 - `Path`: a path is a sequence of pages. It is used to store the current path in the story tree during a session. It contains the list of pages that have been visited. And the karma points associated with the path.
-- `Tree`: a tree is a collection of pages. It contains the root page, and a list of all the pages in the tree. It is used to store the story data and reuse it across sessions.
+- `Tree`: a tree is a collection of pages. It contains the root page, and all the pages with the tree structure. It is used to store and access all the pages in the story.
 
 
 ### Agents
@@ -87,4 +95,3 @@ The project contains three agents:
 ### GUI
 
 The GUI is based on the Python library `PyGame`. It shows the current page text, the possible actions, the image, and the karma points.
-
