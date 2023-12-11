@@ -145,7 +145,7 @@ def test_new_page_with_image() -> None:
 
 
 def test_PageRepository_init() -> None:
-    repository = PageRepository()
+    repository = PageRepository(pages={})
     assert len(repository.pages) == 0
 
 
@@ -187,7 +187,7 @@ def test_PageRepository_from_dict(pages_data: Dict[str, Any]) -> None:
     assert repository.pages["2"].action == "action2"
     assert repository.pages["2"].page_type == PageType.END
     assert repository.pages["2"].karma == KarmaPoints(
-        technology=0.0, happiness=0.0, safety=0.0, control=0.0
+        technology=0.0, happiness=1.0, safety=0.0, control=0.0
     )
     assert isinstance(repository.pages["2"].description, Description)
     assert isinstance(repository.pages["2"].image, Image)
@@ -196,7 +196,7 @@ def test_PageRepository_from_dict(pages_data: Dict[str, Any]) -> None:
     assert repository.pages["4"].action == "action4"
     assert repository.pages["4"].page_type == PageType.ACTION
     assert repository.pages["4"].karma == KarmaPoints(
-        technology=0.0, happiness=0.0, safety=0.0, control=0.0
+        technology=0.0, happiness=0.0, safety=0.0, control=1.0
     )
     assert isinstance(repository.pages["4"].description, Description)
     assert repository.pages["4"].image is None

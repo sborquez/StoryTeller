@@ -43,16 +43,16 @@ class KarmaPoints(pydantic.BaseModel):
 
     # The point in the dimension of technology. Higher is more advanced.
     # Lower is no technology.
-    technology: float
+    technology: float = pydantic.Field(default=0.0)
     # The point in the dimension of happiness. Higher is humans are happier.
     # Lower is humans are unhappier.
-    happiness: float
+    happiness: float = pydantic.Field(default=0.0)
     # The point in the dimension of safety. Higher is humans are safer.
     # Lower is humans doesn't exist.
-    safety: float
+    safety: float = pydantic.Field(default=0.0)
     # The point in the dimension of control. Higher is humans have more
     # control. Lower is AGI has more control.
-    control: float
+    control: float = pydantic.Field(default=0.0)
 
     @classmethod
     def cap(cls, value: float) -> float:
@@ -98,14 +98,15 @@ class Page(pydantic.BaseModel):
     uuid: str = pydantic.Field(default_factory=lambda: uuid.uuid4().hex)
     page_type: PageType = pydantic.Field(default=PageType.ACTION)
     action: str = pydantic.Field(min_length=1, max_length=100)
-    karma: KarmaPoints
+    karma: KarmaPoints = pydantic.Field(default=KarmaPoints())
     description: Optional[Description] = pydantic.Field(default=None)
     image: Optional[Image] = pydantic.Field(default=None)
 
 
 class PageRepository:
     """A repository of pages."""
-    def __init__(self, pages: Dict[str, Page] = {}) -> None:
+
+    def __init__(self, pages: Dict[str, Page]) -> None:
         self.pages = pages
 
     @classmethod
@@ -158,6 +159,10 @@ class PageRepository:
         if uuid not in self.pages:
             raise ValueError(f"Page with uuid {uuid} does not exist.")
         del self.pages[uuid]
+
+    def __repr__(self) -> str:
+        pages_uuids = [page_uuid for page_uuid in self.pages.keys()]
+        return f"PageRepository(pages={pages_uuids})"
 
     def __getitem__(self, uuid: str) -> Optional[Page]:
         """Get a page from the repository."""

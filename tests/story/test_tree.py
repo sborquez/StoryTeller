@@ -118,7 +118,9 @@ def test_StoryTree_add_page(sample_data_file: str) -> None:
     new_page = Page(
         action="test",
         page_type=PageType.ACTION,
-        karma=KarmaPoints(technology=0.0, happiness=0.0, safety=0.0, control=0.0)
+        karma=KarmaPoints(
+            technology=0.0, happiness=0.0, safety=0.0, control=0.0
+        )
     )
     tree.add_page(new_page, parent_node=tree.root.children[1])
     assert len(tree.root.children) == 2
@@ -168,6 +170,14 @@ def test_StoryTree_remove_page(sample_data_file: str) -> None:
     assert "2" not in tree.pages
     assert "3" not in tree.pages
     assert len(tree.pages) == 2
+
+
+def test_StoryTreeFactory_create_empty() -> None:
+    """Test that an empty tree can be created."""
+    tree = StoryTreeFactory.create_empty()
+    assert tree.root is None
+    print(tree.pages)
+    assert len(tree.pages) == 0
 
 
 def test_StoryTreeFactory_from_json(sample_data_file: str) -> None:

@@ -26,7 +26,7 @@
             "page_type": "action",
             "action": "action1",
             "karma": {
-                "technology": 0,
+                "technology": 1,
                 "happiness": 0,
                 "safety": 0,
                 "control": 0
@@ -48,7 +48,7 @@
             "action": "action2",
             "karma": {
                 "technology": 0,
-                "happiness": 0,
+                "happiness": 1,
                 "safety": 0,
                 "control": 0
             },
@@ -70,7 +70,7 @@
             "karma": {
                 "technology": 0,
                 "happiness": 0,
-                "safety": 0,
+                "safety": 1,
                 "control": 0
             },
             "image": {
@@ -92,7 +92,7 @@
                 "technology": 0,
                 "happiness": 0,
                 "safety": 0,
-                "control": 0
+                "control": 1
             },
             "image": null,
             "description": {

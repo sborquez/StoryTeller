@@ -6,7 +6,13 @@ from story_teller.story.page import Page, PageRepository
 
 
 class TreeNode:
-    """A node in the story tree."""
+    """A node in the story tree.
+
+    This store the pages in a tree structure. The children of a node are
+    the possible actions that can be taken from that page.
+
+    The root node is the starting page of the story.
+    """
 
     def __init__(self,
                  page_uuid: str, parent: Optional[TreeNode] = None) -> None:
@@ -135,6 +141,11 @@ class StoryTree:
 
 class StoryTreeFactory:
     """A factory for creating story trees."""
+
+    @classmethod
+    def create_empty(cls) -> StoryTree:
+        """Create an empty tree."""
+        return StoryTree(pages_repository=PageRepository(pages={}))
 
     @classmethod
     def from_json(cls, json_file: str) -> StoryTree:
