@@ -73,8 +73,8 @@ class QuitEvent(Event):
         pass
 
 
-class StateMachine(ABC):
-    """State Machine base class.
+class StateMachine:
+    """State Machine for the app.
 
     This class is inherited by the PyGame GUI and the CLI NoGUI concrete state
     machines, and provides to the story teller the user interface control.
@@ -123,17 +123,36 @@ class StateMachine(ABC):
             return True
         return False
 
-    @abstractmethod
-    def render(self) -> None:
+    def get_render_data(self) -> Dict[str, Any]:
         """Render the current state."""
         render_data = self.current_state.render()
-        print(render_data)
+        return render_data
+
+
+class App(ABC):
+    """App class.
+
+    This class is used to represent an app.
+    """
+
+    def __init__(self, state_machine: StateMachine, context: Context) -> None:
+        """Initialize the app."""
+        self._running = False
+        self._state_machine = state_machine
+        self._context = context
 
     @abstractmethod
-    def get_events(self) -> List[Event]:
-        """Get events.
+    def run(self) -> None:
+        """Start the app."""
+        self._running = True
 
-        Returns:
-            list: A list of events.
-        """
-        pass
+    @abstractmethod
+    def stop(self) -> None:
+        """Stop the app."""
+        self._running = False
+
+    @abstractmethod
+    def loop(self) -> None:
+        """Loop the app."""
+        while self._running:
+            pass
