@@ -143,7 +143,7 @@ class StoryTreeFactory:
     """A factory for creating story trees."""
 
     @classmethod
-    def create_empty(cls) -> StoryTree:
+    def from_scratch(cls) -> StoryTree:
         """Create an empty tree."""
         return StoryTree(pages_repository=PageRepository(pages={}))
 
