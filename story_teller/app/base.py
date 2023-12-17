@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any, Dict, List, Optional, NamedTuple
+from typing import Dict, List, Optional, NamedTuple
 
 
 from story_teller.story.tree import StoryTree
@@ -37,12 +37,13 @@ class TextInputEvent(Event):
     This class is used to represent a text input event.
     """
 
-    def __init__(self, text: str) -> None:
+    def __init__(self, target: str, text: str) -> None:
         """Initialize the text input event.
 
         Args:
             text (str): The text input.
         """
+        self.target = target
         self.text = text
 
 
@@ -67,12 +68,20 @@ class AlertSystemEvent(Event):
     This class is used to represent an alert system event.
     """
 
-    def __init__(self, content: str) -> None:
+    class Type(StrEnum):
+        ERROR = "error"
+        TRIGGER = "trigger"
+        INFO = "info"
+
+    def __init__(self, content: str, type: Type | str) -> None:
         """Initialize the alert system event.
 
         Args:
             content (str): The alert.
         """
+        if isinstance(type, str):
+            type = AlertSystemEvent.Type(type)
+        self.type = type
         self.content = content
 
 
@@ -91,9 +100,18 @@ class RenderSceneLayoutType(StrEnum):
     """Render scene layout type class.
 
     This class is used to represent the render scene layout type.
+
+    Description:
+        MAIN: The main layout. The scene is rendered in the "center" of the
+            UI, waiting for the user input.
+        INTERACTION: The interaction layout. This is an composite layout,
+            where the scene is rendered, with the HUD and waiting for the
+            user input.
+        MOVIE: The movie layout. This is only used for non-interactive scenes.
     """
     MAIN = "main"
-    SCENE = "scene"
+    INTERACTION = "interaction"
+    MOVIE = "movie"
 
 
 class RenderSceneData(NamedTuple):
@@ -127,6 +145,10 @@ class RenderControlsData(NamedTuple):
     choices_name: List[str]
     choices_text: List[str]
     choices_enabled: List[bool]
+
+    text_input_target: List[str]
+    text_input_placeholder: List[Optional[str]]
+    text_input_enabled: List[bool]
 
 
 class RenderData(NamedTuple):
@@ -235,7 +257,7 @@ class StateMachine:
         """
         new_state = self.current_state.handle_events(events)
         if new_state is not None:
-            self.change_state(new_state)
+            self.push(new_state)
             return True
         return False
 

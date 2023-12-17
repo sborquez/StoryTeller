@@ -5,10 +5,11 @@ from colorama import just_fix_windows_console
 from termcolor import colored
 
 from story_teller.app.base import (
-    App, Context, Event, RenderData,
-    AlertSystemEvent, ChoiceInputEvent, QuitEvent
+    App, Context,
+    Event, AlertSystemEvent, ChoiceInputEvent, TextInputEvent, QuitEvent,
+    RenderData, RenderControlsData, RenderSceneLayoutType,
 )
-from story_teller.app.states import TitleState
+from story_teller.app.states.title import TitleState
 from story_teller.story.tree import StoryTreeFactory
 
 
@@ -49,11 +50,130 @@ class CLIApp(App):
         just_fix_windows_console()
 
         # Clear the screen
-        print("\033c", end="")
+        self._clear_screen()
 
         # DEBUG
-        return
+        if os.getenv("STORYTELLER_DEBUG", "false").lower() == "true":
+            print("DEBUG MODE... skipping intro...")
+            time.sleep(1)
+            return
+        self._render_intro()
 
+    def _loop(self) -> None:
+        """Quit the CLI app.
+
+        This method is used to quit the CLI app.
+        """
+        while self._running and not self._state_machine.in_end_state:
+            render_data = self._state_machine.get_render_data()
+            try:
+                self._render(render_data)
+                events = []
+                events += self._get_system_events(render_data.layout)
+                events += self._get_user_choice(render_data.controls)
+                events += self._get_user_text_input(render_data.controls)
+            except KeyboardInterrupt:
+                events = [QuitEvent()]
+
+            self._state_machine.handle_events(events)
+            time.sleep(.1)
+
+    def _clean_up(self) -> None:
+        """Clean up the CLI app.
+
+        This method is used to stop the CLI app.
+        """
+        self._clear_screen()
+        print(colored("Goodbye! thanks for playing!", "black", "on_green"))
+
+    def _get_system_events(self, layout: RenderSceneLayoutType) -> List[Event]:
+        match layout:
+            case RenderSceneLayoutType.MAIN:
+                return []
+            case RenderSceneLayoutType.INTERACTION:
+                return []
+            case RenderSceneLayoutType.MOVIE:
+                return [AlertSystemEvent("ready", "trigger")]
+
+    def _get_user_choice(self, control: RenderControlsData) -> List[Event]:
+        """Get the events.
+
+        This method is used to get the events from the user choice input.
+
+        Returns:
+            List[Event]: A list of events.
+        """
+        choices = []
+        for name, enabled in zip(
+            control.choices_name,
+            control.choices_enabled,
+        ):
+            if not enabled:
+                continue
+            choices.append(name)
+        if not choices:
+            return []
+        user_input = input(colored("Choice:", "black", "on_yellow") + " ")
+        user_input = user_input.strip()
+        if user_input == "":
+            return []
+        elif user_input.isdigit() and 1 <= int(user_input) <= len(choices):
+            choice_name = choices[int(user_input) - 1]
+            return [ChoiceInputEvent(choice_name)]
+        else:
+            return [AlertSystemEvent("Invalid choice", "error")]
+
+    def _get_user_text_input(self, control: RenderControlsData) -> List[Event]:
+        """Get the events.
+
+        This method is used to get the events from the user text input.
+
+        Returns:
+            List[Event]: A list of events.
+        """
+        text_input_events = []
+        for target, enabled in zip(
+            control.text_input_target,
+            control.text_input_enabled,
+        ):
+            if not enabled:
+                continue
+            user_input = input(
+                colored(f"Text [{target}]:", "black", "on_yellow") + " "
+            )
+            user_input = user_input.strip()
+            text_input_events.append(
+                TextInputEvent(target, user_input)
+            )
+        return text_input_events
+
+    def _render(self, render_data: RenderData) -> None:
+        """Render the render data.
+
+        This method is used to render the render data.
+
+        Args:
+            render_data (RenderData): The render data.
+        """	
+        self._clear_screen()
+        match render_data.layout:
+            case RenderSceneLayoutType.MAIN:
+                self._render_main_layout(render_data)
+            case RenderSceneLayoutType.INTERACTION:
+                self._render_interaction(render_data)
+            case RenderSceneLayoutType.MOVIE:
+                self._render_movie(render_data)
+            case _:
+                raise NotImplementedError
+
+    def _clear_screen(self) -> None:
+        """Clean the screen.
+
+        This method is used to clean the screen.
+        """
+        print("\033c", end="")
+
+    def _render_intro(self) -> None:
         # Print the credits in the center (horizontal and vertical)
         # of the screen and in green
         credits = "Story Teller by Sebastián Bórquez"
@@ -83,62 +203,132 @@ class CLIApp(App):
         print("\n" * (self.HEIGHT//2 - 1))
         input()
 
-    def _loop(self) -> None:
-        """Quit the CLI app.
+    def _render_main_layout(self, render_data: RenderData) -> None:
 
-        This method is used to quit the CLI app.
-        """
-        while self._running and not self._state_machine.in_end_state:
-            render_data = self._state_machine.get_render_data()
-            self._render(render_data)
-            choices = []
-            for choice_name, choice_text, choice_enabled in zip(
-                render_data.controls.choices_name,
-                render_data.controls.choices_text,
-                render_data.controls.choices_enabled,
-            ):
-                if not choice_enabled:
-                    continue
-                choices.append((len(choices) + 1, choice_name, choice_text))
-            if choices:
-                events = self._get_user_choice(choices)
-            else:
-                raise NotImplementedError
-            self._state_machine.handle_events(events)
-            time.sleep(.1)
+        # Title UI
+        title = render_data.scene.title
+        print(colored(title.center(self.WIDTH), "black", "on_cyan"))
 
-    def _clean_up(self) -> None:
-        """Clean up the CLI app.
+        # Alerts UI
+        alert = render_data.hud.alert
+        if alert is not None:
+            print(colored(alert.center(self.WIDTH), "black", "on_red"))
 
-        This method is used to stop the CLI app.
-        """
-        pass
+        # Description UI
+        # Split the description into lines, with padding two spaces
+        # on the left and right.
+        description = render_data.scene.description
+        description = description.replace("\n\n", "\n\t\n")
+        description_lines = description.split("\n")
+        print(colored(self.WIDTH * "*", 'cyan'))
+        for description_line in description_lines:
+            for i in range(0, len(description_line), self.WIDTH - 4):
+                line = description_line[i:i + self.WIDTH - 4]
+                line = colored("* ", 'cyan') \
+                    + line.strip().center(self.WIDTH - 4) \
+                    + colored(" *", 'cyan')
+                print(line)
+        print(colored(self.WIDTH * "*", 'cyan'))
 
-    def _get_user_choice(self, choices: List[tuple]) -> List[Event]:
-        """Get the events.
+        # Control UI
+        controls = render_data.controls
+        controls_title = colored(self.WIDTH * "-", "cyan") + "\n"
+        control_title_content = ''
+        if sum(controls.choices_enabled) > 0:
+            control_title_content += \
+                f"{colored('Choice', 'black', 'on_yellow')}" \
+                " one " \
+                f"{colored('<option>', 'red')}"
+        if sum(controls.text_input_enabled) > 0:
+            if control_title_content:
+                control_title_content += " and "
+            control_title_content += \
+                f"{colored('Type', 'black', 'on_yellow')}" \
+                " the " \
+                f"{colored('<text>', 'red')}"
+        if not control_title_content:
+            control_title_content += "No options"
+        controls_title += control_title_content.center(self.WIDTH) + "\n"
+        controls_title += colored(self.WIDTH * "-", "cyan")
+        print(controls_title)
 
-        This method is used to get the events from the user input.
+        # The controls are rendered in the bottom of the screen
+        # with the format:
+        #  --------------------
+        #   <1>. Choice 1
+        #   <2>. Choice 2
+        #   ...
+        #   [text] Text placeholder
+        #  --------------------
+        control_lines = []
+        i = 0
+        for enabled, text in zip(
+            controls.choices_enabled,
+            controls.choices_text,
+        ):
+            if not enabled:
+                continue
+            i += 1
+            control_lines.append(
+                f"{colored(f'{i}', 'red')}. {text}"
+            )
+        for target, enabled, placeholder in zip(
+            controls.text_input_target,
+            controls.text_input_enabled,
+            controls.text_input_placeholder,
+        ):
+            if not enabled:
+                continue
+            control_lines.append(
+                f"[{colored(target, 'red')}]: {placeholder}"
+            )
 
-        Returns:
-            List[Event]: A list of events.
-        """
-        user_input = input().strip().lower()
-        if user_input == "q":
-            return [QuitEvent()]
-        elif user_input == "":
-            return []
-        elif user_input in [str(choice[0]) for choice in choices]:
-            choice_name = choices[int(user_input) - 1][1]
-            return [ChoiceInputEvent(choice_name)]
-        else:
-            return [AlertSystemEvent("Invalid choice")]
+        for line in control_lines:
+            print(line)
+        print(colored(self.WIDTH * "-", "cyan"))
 
-    def _render(self, render_data: RenderData) -> None:
-        print("\033c", end="")
-        print(render_data.layout)
+    def _render_movie(self, render_data: RenderData) -> None:
+        # Title UI
+        title = render_data.scene.title
+        print(colored(title.center(self.WIDTH), "black", "on_cyan"))
+
+        # Alerts UI
+        alert = render_data.hud.alert
+        if alert is not None:
+            print(colored(alert.center(self.WIDTH), "black", "on_red"))
+
+        # KARMA UI
+        karma = render_data.hud.karma
+        karma_text = ""
+        for name, value in karma.items():
+            karma_text += f"{name}: {value:.2f} "
+        print(colored(karma_text.center(self.WIDTH), "black", "on_light_grey"))
+
+        # Description UI
+        # Split the description into lines, with padding two spaces
+        # on the left and right.
+        description = render_data.scene.description
+        description = description.replace("\n\n", "\n\t\n")
+        description_lines = description.split("\n")
+        print(colored(self.WIDTH * "*", 'cyan'))
+        for description_line in description_lines:
+            for i in range(0, len(description_line), self.WIDTH - 4):
+                line = description_line[i:i + self.WIDTH - 4]
+                line = colored("* ", 'cyan') \
+                    + line.strip().center(self.WIDTH - 4) \
+                    + colored(" *", 'cyan')
+                print(line)
+        print(colored(self.WIDTH * "*", 'cyan'))
+        input(
+            colored("Press any key to continue...", "black", "on_yellow")
+            .center(self.WIDTH)
+        )
+
+    def _render_interaction(self, render_data: RenderData) -> None:
         print(render_data.scene)
         print(render_data.controls)
         print(render_data.hud)
+        print(render_data.layout)
 
 
 class CLIAppFactory:
@@ -184,12 +374,17 @@ class CLIAppFactory:
 
 if __name__ == "__main__":
     import os
+    from dotenv import load_dotenv
+
+    # load environment variables from .env file
+    load_dotenv()
 
     # Get the story file path in the test directory
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     story_file = os.path.join(root_dir, "tests", "data", "sample.json")
 
     settings = {
+        # TODO: Use environment variables
         "story_file": story_file,
     }
     app = CLIAppFactory.from_settings(settings)

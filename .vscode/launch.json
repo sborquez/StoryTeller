@@ -8,9 +8,13 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "story_teller/app/cli.py",
+            "cwd": "${workspaceFolder}",
+            "module": "story_teller.app.cli",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "env": {
+                "STORYTELLER_DEBUG": "true",
+            }
         }
     ]
 }

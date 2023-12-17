@@ -56,6 +56,12 @@ Use the `.env` file to set up the environment variables. The following variables
 - `STORYTELLER_GUI_HEIGHT`: the height of the GUI window (default: `600`)
 - `STORYTELLER_GUI_FULLSCREEN`: whether to run the GUI in fullscreen mode or not (default: `False`)
 
+Optionally, you can set the following variables:
+
+- `STORYTELLER_DEBUG`: whether to run in debug mode or not (default: `false`)
+- `STORYTELLER_LOG_LEVEL`: the log level (default: `INFO`)
+
+
 ### Testing
 
 To run the tests, run the following command:
