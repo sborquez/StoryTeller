@@ -10,6 +10,9 @@ from story_teller.app.base import (
     RenderSceneLayoutType,
 )
 from story_teller.app.states.show import ShowState
+from story_teller.story.page import Page, PageType, Description, KarmaPoints
+from story_teller.story.tree import StoryTree, StoryTreeFactory
+from story_teller.story.path import Path
 
 
 logger = logging.getLogger(__name__)
@@ -58,15 +61,22 @@ class TitleState(State):
         This method is called when the state is entered.
         """
         logger.info("Entering title state.")
-        # TODO: load story tree from file, if doesn't exist, disable start
-        # story_tree = self._state_machine.context.story_tree
-        # self._state_machine.context.current_path = Path(story_tree)
-        # logger.info(f"Creating path from story tree {story_tree}.")
 
-        # if there are no story, force user to change story
-        self._choices["start"]["enabled"] = False
-        self._choices["change_story"]["enabled"] = False
-        self._text_inputs["description"]["enabled"] = True
+        story_tree = self._state_machine.context.story_tree
+        start_page = story_tree.get_start_page()
+
+        if start_page is None:
+            # if there are no story, force user to change story
+            self._choices["start"]["enabled"] = False
+            self._choices["change_story"]["enabled"] = False
+            self._text_inputs["description"]["enabled"] = True
+            self._ready = False
+        else:
+            self._choices["start"]["enabled"] = True
+            self._choices["change_story"]["enabled"] = True
+            self._text_inputs["description"]["enabled"] = False
+            self._description = start_page.description.page
+            self._ready = True
 
     def on_exit(self):
         """Exit the state.
@@ -90,6 +100,7 @@ class TitleState(State):
             scene=RenderSceneData(
                 title=self._title,
                 description=self._description or self._description_placeholder,
+                image=None,
             ),
             hud=RenderHUDData(
                 karma={},  # TODO
@@ -129,12 +140,19 @@ class TitleState(State):
             State: The new state.
         """
         for event in events:
+
+            # Choices events
             if isinstance(event, ChoiceInputEvent):
                 match event.choice:
                     case "start":
                         logging.info("Starting story.")
                         if not self._ready:
                             raise RuntimeError("Title state not ready.")
+                        # Start new path
+                        self._state_machine.context.current_path = \
+                            self._start_new_path(
+                                self._state_machine.context.story_tree,
+                            )
                         return ShowState(self._state_machine)
                     case "change_story":
                         logging.info("Changing story.")
@@ -142,18 +160,50 @@ class TitleState(State):
                         self._choices["start"]["enabled"] = False
                         self._text_inputs["description"]["enabled"] = True
                         return None
+
+            # Text input events
             elif isinstance(event, TextInputEvent):
                 if event.text == "":
                     self._alert = "Please enter a non-empty description."
                     return None
                 self._choices["change_story"]["enabled"] = True
                 self._choices["start"]["enabled"] = True
-                # TODO: Modify story tree
                 self._description = event.text
                 self._text_inputs["description"]["enabled"] = False
                 self._ready = True
+                # Modify story tree
+                self._state_machine.context.story_tree = \
+                    self._get_new_story_tree(event.text)
+
+            # Exit event
             elif isinstance(event, QuitEvent):
                 self._state_machine.end()
                 return None
+
+            # System events
             elif isinstance(event, AlertSystemEvent):
                 self._alert = event.content
+
+    @staticmethod
+    def _get_new_story_tree(description: str) -> StoryTree:
+        """Get a new story tree."""
+        story_tree = StoryTreeFactory.from_scratch()
+        story_tree.add_page(
+            page=Page(
+                page_tyle=PageType.START,
+                description=Description(
+                    page=description,
+                    action="Start the story!",
+                    image="",
+                ),
+                karma=KarmaPoints(),
+                image=None,
+            ),
+        )
+        return story_tree
+
+    @staticmethod
+    def _start_new_path(story_tree: StoryTree) -> Path:
+        """Get a new path."""
+        new_path = Path(story_tree)
+        return new_path

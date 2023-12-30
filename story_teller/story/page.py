@@ -81,6 +81,15 @@ class KarmaPoints(pydantic.BaseModel):
             control=self.cap(self.control - other.control),
         )
 
+    def to_dict(self) -> Dict[str, float]:
+        """Return a dictionary representation of the karma points."""
+        return {
+            "technology": self.technology,
+            "happiness": self.happiness,
+            "safety": self.safety,
+            "control": self.control,
+        }
+
 
 class PageType(StrEnum):
     """The type of the page."""
@@ -97,7 +106,9 @@ class Page(pydantic.BaseModel):
     """A page in the story."""
     uuid: str = pydantic.Field(default_factory=lambda: uuid.uuid4().hex)
     page_type: PageType = pydantic.Field(default=PageType.ACTION)
-    action: str = pydantic.Field(min_length=1, max_length=100)
+    action: str = pydantic.Field(
+        min_length=1, max_length=100, default="Start the story!"
+    )
     karma: KarmaPoints = pydantic.Field(default=KarmaPoints())
     description: Optional[Description] = pydantic.Field(default=None)
     image: Optional[Image] = pydantic.Field(default=None)

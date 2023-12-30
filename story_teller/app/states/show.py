@@ -42,7 +42,7 @@ class ShowState(State):
 
         -o-
 
-        Keep an eye on your karma. If will determine the outcome of your
+        Keep an eye on your karma. It will determine the outcome of your
         story, so choose wisely.
 
         -o-
@@ -52,10 +52,7 @@ class ShowState(State):
         self._ready = False
         self._alert = None
 
-        self._karma = {
-            'good': 0.5,
-            'bad': 0.5,
-        }
+        self._karma = {}
 
     def on_enter(self) -> None:
         """Enter the state.
@@ -63,6 +60,11 @@ class ShowState(State):
         This method is called when the state is entered.
         """
         logger.info("Entering show state.")
+        self._karma = self._state_machine\
+            .context \
+            .current_path \
+            .compute_karma() \
+            .to_dict()
 
     def on_exit(self) -> None:
         """Exit the state.
@@ -86,6 +88,7 @@ class ShowState(State):
             scene=RenderSceneData(
                 title=self._title,
                 description=self._description,
+                image=None,
             ),
             hud=RenderHUDData(
                 karma=self._karma,

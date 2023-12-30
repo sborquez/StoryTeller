@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import dataclasses
 from enum import StrEnum
 from typing import Dict, List, Optional, NamedTuple
 
@@ -8,7 +9,8 @@ from story_teller.story.tree import StoryTree
 from story_teller.story.path import Path
 
 
-class Context(NamedTuple):
+@dataclasses.dataclass
+class Context:
     """Context class.
 
     This class is used to represent the context or shared data between the
@@ -121,8 +123,8 @@ class RenderSceneData(NamedTuple):
     """
     title: str
     description: str
+    image: Optional[str]
     # TODO: Add more scene data
-    # image: str
     # audio: str
     # action: str
 

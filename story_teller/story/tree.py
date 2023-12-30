@@ -1,5 +1,7 @@
 from __future__ import annotations
+from datetime import datetime
 import json
+import os
 from typing import Any, Dict, List, Optional
 
 from story_teller.story.page import Page, PageRepository
@@ -107,6 +109,11 @@ class StoryTree:
     def get_page(self, uuid: str) -> Optional[Page]:
         return self.pages.get_page(uuid)
 
+    def get_start_page(self) -> Optional[Page]:
+        if self.root is None:
+            return None
+        return self.pages.get_page(self.root.page_uuid)
+
     def search_page_node(self,
                          uuid: str, node: Optional[TreeNode] = None
                          ) -> Optional[TreeNode]:
@@ -145,7 +152,15 @@ class StoryTreeFactory:
     @classmethod
     def from_scratch(cls) -> StoryTree:
         """Create an empty tree."""
-        return StoryTree(pages_repository=PageRepository(pages={}))
+        # Generate random from current date
+        data_dir = os.getenv("STORYTELLER_DATA_DIR")
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
+        new_story_tree_filename = os.path.join(data_dir, f"story_{now}.json")
+        return StoryTree(
+            root=None,
+            pages_repository=PageRepository(pages={}),
+            tree_source=new_story_tree_filename,
+        )
 
     @classmethod
     def from_json(cls, json_file: str) -> StoryTree:
@@ -165,11 +180,12 @@ class StoryTreeWriter:
     """Save a tree to persistent storage."""
 
     @classmethod
-    def to_json(cls, tree: StoryTree, json_file: str) -> None:
+    def to_json(cls, tree: StoryTree, json_file: Optional[str] = None) -> None:
         """Write a tree to a JSON file."""
         tree_data = {
             "root": TreeNode.to_dict(tree.root),
             "pages": PageRepository.to_dict(tree.pages)
         }
+        json_file = json_file or tree.tree_source
         with open(json_file, "w") as f:
             json.dump(tree_data, f, indent=4)

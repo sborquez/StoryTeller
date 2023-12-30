@@ -1,5 +1,6 @@
 import time
-from typing import Any, Dict, List
+from typing import List
+from configparser import ConfigParser
 
 from colorama import just_fix_windows_console
 from termcolor import colored
@@ -154,7 +155,7 @@ class CLIApp(App):
 
         Args:
             render_data (RenderData): The render data.
-        """	
+        """
         self._clear_screen()
         match render_data.layout:
             case RenderSceneLayoutType.MAIN:
@@ -173,48 +174,23 @@ class CLIApp(App):
         """
         print("\033c", end="")
 
-    def _render_intro(self) -> None:
-        # Print the credits in the center (horizontal and vertical)
-        # of the screen and in green
-        credits = "Story Teller by Sebastián Bórquez"
-        # Rotating loading animation in the center (horizontal and vertical)
-        # below the credits
-        loading = ".--^^--."
-        print("\n" * (self.HEIGHT//2 - 1))
-        print(colored(credits.center(self.WIDTH), "black", "on_cyan"))
-        print()
-        print("Loading".center(self.WIDTH))
-        print()
-        print("\n" * (self.HEIGHT//2 - 3))
-        move_up = "\033[F" * (self.HEIGHT//2 - 3)
-        print(move_up, end="")
-        for _ in range(int(len(loading) * 2.5)):
-            print("\033[F", end="")
-            print(loading.center(self.WIDTH))
-            time.sleep(.25)
-            loading = loading[1:] + loading[0]
-        # Clean up the loading animation
-        print("\033[F", end="")
-        print(" " * self.WIDTH, end="")
-        print("\033[F"*2, end="")
-        print("Done!".center(self.WIDTH))
-        print()
-        print("Press any key to continue...".center(self.WIDTH))
-        print("\n" * (self.HEIGHT//2 - 1))
-        input()
-
-    def _render_main_layout(self, render_data: RenderData) -> None:
-
-        # Title UI
+    def _show_title_ui(self, render_data: RenderData) -> None:
         title = render_data.scene.title
         print(colored(title.center(self.WIDTH), "black", "on_cyan"))
 
-        # Alerts UI
+    def _show_alert_ui(self, render_data: RenderData) -> None:
         alert = render_data.hud.alert
         if alert is not None:
             print(colored(alert.center(self.WIDTH), "black", "on_red"))
 
-        # Description UI
+    def _show_karma_ui(self, render_data: RenderData) -> None:
+        karma = render_data.hud.karma
+        karma_text = ""
+        for name, value in karma.items():
+            karma_text += f"{name}: {value:.2f} "
+        print(colored(karma_text.center(self.WIDTH), "black", "on_light_grey"))
+
+    def _show_description_ui(self, render_data: RenderData) -> None:
         # Split the description into lines, with padding two spaces
         # on the left and right.
         description = render_data.scene.description
@@ -230,7 +206,7 @@ class CLIApp(App):
                 print(line)
         print(colored(self.WIDTH * "*", 'cyan'))
 
-        # Control UI
+    def _show_control_ui(self, render_data: RenderData) -> None:
         controls = render_data.controls
         controls_title = colored(self.WIDTH * "-", "cyan") + "\n"
         control_title_content = ''
@@ -287,68 +263,109 @@ class CLIApp(App):
             print(line)
         print(colored(self.WIDTH * "-", "cyan"))
 
-    def _render_movie(self, render_data: RenderData) -> None:
+    def _render_intro(self) -> None:
+        # Print the credits in the center (horizontal and vertical)
+        # of the screen and in green
+        credits = "Story Teller by Sebastián Bórquez"
+        # Rotating loading animation in the center (horizontal and vertical)
+        # below the credits
+        loading = ".--^^--."
+        print("\n" * (self.HEIGHT//2 - 1))
+        print(colored(credits.center(self.WIDTH), "black", "on_cyan"))
+        print()
+        print("Loading".center(self.WIDTH))
+        print()
+        print("\n" * (self.HEIGHT//2 - 3))
+        move_up = "\033[F" * (self.HEIGHT//2 - 3)
+        print(move_up, end="")
+        for _ in range(int(len(loading) * 2.5)):
+            print("\033[F", end="")
+            print(loading.center(self.WIDTH))
+            time.sleep(.25)
+            loading = loading[1:] + loading[0]
+        # Clean up the loading animation
+        print("\033[F", end="")
+        print(" " * self.WIDTH, end="")
+        print("\033[F"*2, end="")
+        print("Done!".center(self.WIDTH))
+        print()
+        print("Press [Enter] to continue...".center(self.WIDTH))
+        print("\n" * (self.HEIGHT//2 - 1))
+        input()
+
+    def _render_main_layout(self, render_data: RenderData) -> None:
+
         # Title UI
-        title = render_data.scene.title
-        print(colored(title.center(self.WIDTH), "black", "on_cyan"))
+        self._show_title_ui(render_data)
 
         # Alerts UI
-        alert = render_data.hud.alert
-        if alert is not None:
-            print(colored(alert.center(self.WIDTH), "black", "on_red"))
-
-        # KARMA UI
-        karma = render_data.hud.karma
-        karma_text = ""
-        for name, value in karma.items():
-            karma_text += f"{name}: {value:.2f} "
-        print(colored(karma_text.center(self.WIDTH), "black", "on_light_grey"))
+        self._show_alert_ui(render_data)
 
         # Description UI
-        # Split the description into lines, with padding two spaces
-        # on the left and right.
-        description = render_data.scene.description
-        description = description.replace("\n\n", "\n\t\n")
-        description_lines = description.split("\n")
-        print(colored(self.WIDTH * "*", 'cyan'))
-        for description_line in description_lines:
-            for i in range(0, len(description_line), self.WIDTH - 4):
-                line = description_line[i:i + self.WIDTH - 4]
-                line = colored("* ", 'cyan') \
-                    + line.strip().center(self.WIDTH - 4) \
-                    + colored(" *", 'cyan')
-                print(line)
-        print(colored(self.WIDTH * "*", 'cyan'))
+        self._show_description_ui(render_data)
+
+        # Control UI
+        self._show_control_ui(render_data)
+
+    def _render_movie(self, render_data: RenderData) -> None:
+        # Title UI
+        self._show_title_ui(render_data)
+
+        # Alerts UI
+        self._show_alert_ui(render_data)
+
+        # Karma UI
+        self._show_karma_ui(render_data)
+
+        # Description UI
+        self._show_description_ui(render_data)
+
+        # Wait for the user to press enter
         input(
-            colored("Press any key to continue...", "black", "on_yellow")
+            colored("Press [Enter] to continue...", "black", "on_yellow")
             .center(self.WIDTH)
         )
 
     def _render_interaction(self, render_data: RenderData) -> None:
-        print(render_data.scene)
-        print(render_data.controls)
-        print(render_data.hud)
-        print(render_data.layout)
+        # Title UI
+        self._show_title_ui(render_data)
+
+        # Alerts UI
+        self._show_alert_ui(render_data)
+
+        # Karma UI
+        self._show_karma_ui(render_data)
+
+        # Description UI
+        self._show_description_ui(render_data)
+
+        # Control UI
+        self._show_control_ui(render_data)
 
 
 class CLIAppFactory:
 
-    DEFAULT_SETTINGS = {
+    DEFAULT_CONFIG = {
         "story_file": None,
     }
 
     @classmethod
-    def from_settings(cls, settings: Dict[str, Any]) -> CLIApp:
+    def from_config(cls, config: ConfigParser) -> CLIApp:
         """Build the CLI app.
 
         This method is used to build the CLI app.
 
+        Args:
+            config:
+
         Returns:
             CLIApp: The CLI app.
         """
-        story_file = settings.get("story_file", None)
+        story_file = config.get(
+            "story", "story_file", fallback=cls.DEFAULT_CONFIG["story_file"]
+        )
         if story_file is None:
-            story_tree = StoryTreeFactory.create_empty()
+            story_tree = StoryTreeFactory.from_scratch()
         else:
             story_tree = StoryTreeFactory.from_json(story_file)
 
@@ -367,8 +384,8 @@ class CLIAppFactory:
         Returns:
             CLIApp: The CLI app.
         """
-        settings = cls.DEFAULT_SETTINGS
-        app = cls.build_from_settings(settings)
+        settings = cls.DEFAULT_CONFIG
+        app = cls.build_from_config(settings)
         return app
 
 
@@ -376,16 +393,14 @@ if __name__ == "__main__":
     import os
     from dotenv import load_dotenv
 
-    # load environment variables from .env file
+    # Load configuration
     load_dotenv()
+    # config = ConfigParser()
+    config = ConfigParser(os.environ)
+    if os.path.exists(os.getenv("STORYTELLER_CONFIG_FILE")):
+        config.read(os.getenv("STORYTELLER_CONFIG_FILE"))
+    else:
+        print("No config file found, using default settings")
 
-    # Get the story file path in the test directory
-    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    story_file = os.path.join(root_dir, "tests", "data", "sample.json")
-
-    settings = {
-        # TODO: Use environment variables
-        "story_file": story_file,
-    }
-    app = CLIAppFactory.from_settings(settings)
+    app = CLIAppFactory.from_config(config)
     app.run()
