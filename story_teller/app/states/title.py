@@ -1,7 +1,7 @@
 from typing import List, Optional
 import logging
+import random
 
-# from story_teller.story.path import Path
 from story_teller.app.base import (
     StateMachine,
     Event, AlertSystemEvent, ChoiceInputEvent, TextInputEvent, QuitEvent,
@@ -10,7 +10,7 @@ from story_teller.app.base import (
     RenderSceneLayoutType,
 )
 from story_teller.app.states.show import ShowState
-from story_teller.story.page import Page, PageType, Description, KarmaPoints
+from story_teller.story.page import Page, PageType, Description
 from story_teller.story.tree import StoryTree, StoryTreeFactory
 from story_teller.story.path import Path
 
@@ -63,9 +63,9 @@ class TitleState(State):
         logger.info("Entering title state.")
 
         story_tree = self._state_machine.context.story_tree
-        start_page = story_tree.get_start_page()
+        context_page = story_tree.get_context_page()
 
-        if start_page is None:
+        if context_page is None:
             # if there are no story, force user to change story
             self._choices["start"]["enabled"] = False
             self._choices["change_story"]["enabled"] = False
@@ -75,7 +75,7 @@ class TitleState(State):
             self._choices["start"]["enabled"] = True
             self._choices["change_story"]["enabled"] = True
             self._text_inputs["description"]["enabled"] = False
-            self._description = start_page.description.page
+            self._description = context_page.description.page
             self._ready = True
 
     def on_exit(self):
@@ -190,14 +190,8 @@ class TitleState(State):
         story_tree = StoryTreeFactory.from_scratch()
         story_tree.add_page(
             page=Page(
-                page_tyle=PageType.START,
-                description=Description(
-                    page=description,
-                    action="Start the story!",
-                    image="",
-                ),
-                karma=KarmaPoints(),
-                image=None,
+                page_type=PageType.CONTEXT,
+                description=Description(page=description),
             ),
         )
         return story_tree
@@ -206,4 +200,10 @@ class TitleState(State):
     def _start_new_path(story_tree: StoryTree) -> Path:
         """Get a new path."""
         new_path = Path(story_tree)
+        # TODO: move this responsibility to Teller
+        actions = new_path.view_action_options()
+        if len(actions) == 0:
+            raise RuntimeError("No action available.")
+        selected = random.choice(list(actions.keys()))
+        new_path.take_action(selected)
         return new_path

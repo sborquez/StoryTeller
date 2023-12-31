@@ -41,7 +41,10 @@ class Path:
         actions = {}
         for child in self._current_page_node.children:
             child_page = self._story_tree.get_page(child.page_uuid)
-            child_action = child_page.action
+            if child_page.page_type == PageType.START:
+                child_action = f"Start {child_page.uuid}"
+            else:
+                child_action = child_page.action
             actions[child_action] = child
         return actions
 
@@ -61,7 +64,7 @@ class Path:
 
     def go_back(self) -> None:
         """Go back to the previous page."""
-        if len(self._pages_uuid) == 1:
+        if len(self._pages_uuid) == 2:
             raise ValueError("Cannot go back from the starting page.")
         self._pages_uuid.pop()
         self._actions_taken.pop()

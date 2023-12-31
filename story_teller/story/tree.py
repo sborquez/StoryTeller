@@ -109,7 +109,7 @@ class StoryTree:
     def get_page(self, uuid: str) -> Optional[Page]:
         return self.pages.get_page(uuid)
 
-    def get_start_page(self) -> Optional[Page]:
+    def get_context_page(self) -> Optional[Page]:
         if self.root is None:
             return None
         return self.pages.get_page(self.root.page_uuid)

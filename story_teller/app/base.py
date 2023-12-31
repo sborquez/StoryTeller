@@ -18,12 +18,8 @@ class Context:
     path, etc.
     """
     story_tree: StoryTree
+    # teller: Teller
     current_path: Optional[Path] = None
-
-    # TODO: Add more context data
-    # learner: Learner
-    # writer: Writer
-    # drawer: Drawer
 
 
 class Event(ABC):

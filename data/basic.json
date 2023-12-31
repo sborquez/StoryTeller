@@ -2,6 +2,27 @@
     "pages": {
         "0": {
             "uuid": "0",
+            "page_type": "context",
+            "action": "root",
+            "image": {
+                "path": "context.png",
+                "url": null,
+                "description": "This is the setup for your story"
+            },
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "description": {
+                "page":  "This is the setup for your story",
+                "action": null,
+                "image":  "This is the setup for your story"
+            }
+        },
+        "1": {
+            "uuid": "1",
             "page_type": "start",
             "action": "start",
             "image": {
@@ -21,8 +42,8 @@
                 "image": "This is the start image"
             }
         },
-        "1": {
-            "uuid": "1",
+        "2": {
+            "uuid": "2",
             "page_type": "action",
             "action": "action1",
             "karma": {
@@ -42,8 +63,8 @@
                 "image": "This is the action1 image"
             }
         },
-        "2": {
-            "uuid": "2",
+        "3": {
+            "uuid": "3",
             "page_type": "end",
             "action": "action2",
             "karma": {
@@ -63,8 +84,8 @@
                 "image": "This is the action2 image"
             }
         },
-        "3": {
-            "uuid": "3",
+        "4": {
+            "uuid": "4",
             "page_type": "end",
             "action": "action3",
             "karma": {
@@ -84,8 +105,8 @@
                 "image": "This is the action3 image"
             }
         },
-        "4": {
-            "uuid": "4",
+        "5": {
+            "uuid": "5",
             "page_type": "action",
             "action": "action4",
             "karma": {
@@ -110,18 +131,23 @@
                 "children": [
                     {
                         "page_uuid": "2",
-                        "children": []
+                        "children": [
+                            {
+                                "page_uuid": "3",
+                                "children": []
+                            },
+                            {
+                                "page_uuid": "4",
+                                "children": []
+                            }
+                        ]
                     },
                     {
-                        "page_uuid": "3",
+                        "page_uuid": "5",
                         "children": []
                     }
                 ]
-            },
-            {
-                "page_uuid": "4",
-                "children": []
             }
         ]
-    }
+    } 
 }
