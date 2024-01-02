@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 class GameOverState(State):
     """Game Over state.
 
-    This is the final state. This state is used to recieve feedback for the story.
+    This is the final state. This state is used to recieve feedback for
+    the story.
     """
 
     def __init__(self, state_machine: StateMachine) -> None:

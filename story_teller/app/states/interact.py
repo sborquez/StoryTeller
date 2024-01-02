@@ -53,7 +53,10 @@ class InteractState(State):
         This method is called when the state is entered.
         """
         logger.info("Entering interact state.")
-        self._page = self._state_machine.context.current_path.get_current_page()
+        self._page = self._state_machine\
+            .context\
+            .current_path\
+            .get_current_page()
         # Update title
         if self._page.page_type == PageType.START:
             self._title = "Your story starts here!"
