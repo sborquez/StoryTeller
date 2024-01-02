@@ -172,9 +172,9 @@ def test_StoryTree_remove_page(sample_data_file: str) -> None:
     assert len(tree.pages) == 2
 
 
-def test_StoryTreeFactory_create_empty() -> None:
+def test_StoryTreeFactory_from_scratch() -> None:
     """Test that an empty tree can be created."""
-    tree = StoryTreeFactory.create_empty()
+    tree = StoryTreeFactory.from_scratch()
     assert tree.root is None
     print(tree.pages)
     assert len(tree.pages) == 0

@@ -33,9 +33,9 @@ class Description(pydantic.BaseModel):
     # The description of the currect state of the world.
     page: str
     # The description of the consequences of the action
-    action: str
+    action: Optional[str] = pydantic.Field(default=None)
     # A visual description of the current state of the world.
-    image: str
+    image: Optional[str] = pydantic.Field(default=None)
 
 
 class KarmaPoints(pydantic.BaseModel):
@@ -81,11 +81,22 @@ class KarmaPoints(pydantic.BaseModel):
             control=self.cap(self.control - other.control),
         )
 
+    def to_dict(self) -> Dict[str, float]:
+        """Return a dictionary representation of the karma points."""
+        return {
+            "technology": self.technology,
+            "happiness": self.happiness,
+            "safety": self.safety,
+            "control": self.control,
+        }
+
 
 class PageType(StrEnum):
     """The type of the page."""
 
-    # The page is the start of the story.
+    # This page is the context, previous to select actions
+    CONTEXT = "context"
+    # The page is the start of the story, its action is the start of the story.
     START = "start"
     # The page is a normal page.
     ACTION = "action"
@@ -97,7 +108,7 @@ class Page(pydantic.BaseModel):
     """A page in the story."""
     uuid: str = pydantic.Field(default_factory=lambda: uuid.uuid4().hex)
     page_type: PageType = pydantic.Field(default=PageType.ACTION)
-    action: str = pydantic.Field(min_length=1, max_length=100)
+    action: Optional[str] = pydantic.Field(default=None)
     karma: KarmaPoints = pydantic.Field(default=KarmaPoints())
     description: Optional[Description] = pydantic.Field(default=None)
     image: Optional[Image] = pydantic.Field(default=None)
