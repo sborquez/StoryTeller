@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from story_teller.story.page import KarmaPoints, Page, PageType
 from story_teller.story.tree import StoryTree, TreeNode
@@ -20,6 +20,7 @@ class Path:
         self._current_page_node = self.starting_page_node
         self._story_tree = story_tree
         self._is_finished = False
+        self._score = 0.0
 
         self._pages_uuid = [
             self.starting_page_node.page_uuid
@@ -88,3 +89,16 @@ class Path:
     def get_actions_taken(self) -> List[str]:
         """Return the list of actions in the path."""
         return list(self._actions_taken)
+
+    def finish(self) -> None:
+        """Finish the path."""
+        self._is_finished = True
+
+    def feedback(self, score: float) -> None:
+        """Provide feedback to the path."""
+        if self._is_finished:
+            self._score = score
+
+    def get_score(self) -> Optional[float]:
+        """Return the score of the path."""
+        return self._score if self._is_finished else None
