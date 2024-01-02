@@ -3,13 +3,12 @@ import random
 from typing import List, Optional
 
 from story_teller.app.base import (
-    StateMachine,
+    StateMachine, State,
     Event, AlertSystemEvent, ChoiceInputEvent, TextInputEvent, QuitEvent,
-    State,
     RenderData, RenderSceneData, RenderHUDData, RenderControlsData,
     RenderSceneLayoutType,
 )
-from story_teller.app.states.show import ShowState
+from story_teller.app.states import StateRegistry
 from story_teller.story.page import Page, PageType, Description
 from story_teller.story.path import Path
 from story_teller.story.tree import StoryTree, StoryTreeFactory
@@ -153,7 +152,8 @@ class TitleState(State):
                             self._start_new_path(
                                 self._state_machine.context.story_tree,
                             )
-                        return ShowState(self._state_machine)
+                        next_state = StateRegistry.get("ShowState")
+                        return next_state(self._state_machine)
                     case "change_story":
                         logging.info("Changing story.")
                         self._choices["change_story"]["enabled"] = False

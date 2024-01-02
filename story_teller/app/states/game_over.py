@@ -2,15 +2,14 @@ import logging
 from typing import List, Optional
 
 from story_teller.app.base import (
-    StateMachine,
+    StateMachine, State,
     Event,
     AlertSystemEvent, ChoiceInputEvent, QuitEvent,
-    State,
     RenderData,
     RenderSceneData, RenderHUDData, RenderControlsData,
     RenderSceneLayoutType,
 )
-from story_teller.app.states.title import TitleState
+from story_teller.app.states import StateRegistry
 
 
 logger = logging.getLogger(__name__)
@@ -32,11 +31,13 @@ class GameOverState(State):
         super().__init__(state_machine)
 
         self._title = "Game Over"
+        self._description = """
+        You have reached the end of the story. Please rate the story.
+        """
         self._choices = {
             str(score): {"text": "Score: " + str(score), "enabled": True}
             for score in (-2, -1, 0, 1, 2)
         }
-        self._description = None
         self._alert = None
         self._karma = {}
 
@@ -54,7 +55,6 @@ class GameOverState(State):
         """
         logger.info("Exiting game over state.")
         # TODO: Teller should use the feedback to update the story tree
-        self._state_machine.context.current_path = None
 
     def render(self) -> RenderData:
         """Render the state.
@@ -115,13 +115,18 @@ class GameOverState(State):
                     .current_path\
                     .feedback(feedback)
 
-                # Go to start state
-                self._state_machine\
-                    .context\
-                    .current_path\
-                    .start()
+                # TODO: Teller should use the feedback to update its algorithm
+                # path = self._state_machine.context.current_path
+                # self._state_machine\
+                #     .context\
+                #     .teller\
+                #     .receive_feedback(path)
 
-                return TitleState(self._state_machine)
+                # Reset the current path
+                self._state_machine.context.current_path = None
+
+                next_state = StateRegistry.get("TitleState")
+                return next_state(self._state_machine)
 
             # Exit event
             elif isinstance(event, QuitEvent):

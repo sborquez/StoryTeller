@@ -2,16 +2,16 @@ import logging
 from typing import List
 
 from story_teller.app.base import (
-    StateMachine,
+    StateMachine, State,
     Event,
     AlertSystemEvent, ChoiceInputEvent, QuitEvent,
-    State,
     RenderData,
     RenderSceneData, RenderHUDData, RenderControlsData,
     RenderSceneLayoutType,
 )
+from story_teller.app.states import StateRegistry
 from story_teller.story.page import PageType
-from story_teller.app.states.game_over import GameOverState
+
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class InteractState(State):
         """
         logger.info("Exiting interact state.")
         if self._end_page:
-            self._state_machine.context.current_path.finish("end")
+            self._state_machine.context.current_path.finish()
 
     def render(self) -> RenderData:
         """Render the state.
@@ -147,9 +147,10 @@ class InteractState(State):
             if isinstance(event, AlertSystemEvent):
                 if (event.type == AlertSystemEvent.Type.TRIGGER) \
                    and (event.content == "ready"):
-                    return GameOverState(self._state_machine)
+                    next_state = StateRegistry.get("GameOverState")
+                    return next_state(self._state_machine)
                 elif event.type == AlertSystemEvent.Type.ERROR:
-                    self._alert = event.message
+                    self._alert = event.content
                     return None
 
             # Choices events

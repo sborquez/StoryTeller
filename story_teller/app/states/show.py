@@ -8,7 +8,7 @@ from story_teller.app.base import (
     RenderData,
     RenderSceneLayoutType, RenderSceneData, RenderHUDData, RenderControlsData,
 )
-from story_teller.app.states.interact import InteractState
+from story_teller.app.states import StateRegistry
 
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,8 @@ class ShowState(State):
                 if (event.type == AlertSystemEvent.Type.TRIGGER) \
                    and (event.content == "ready"):
                     self._ready = True
-                    return InteractState(self._state_machine)
+                    next_state = StateRegistry.get("InteractState")
+                    return next_state(self._state_machine)
                 elif event.type == AlertSystemEvent.Type.ERROR:
                     self._alert = event.message
                     return None
