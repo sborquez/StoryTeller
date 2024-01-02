@@ -1,6 +1,6 @@
+from configparser import ConfigParser
 import time
 from typing import List
-from configparser import ConfigParser
 
 from colorama import just_fix_windows_console
 from termcolor import colored

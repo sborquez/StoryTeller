@@ -5,8 +5,8 @@ from enum import StrEnum
 from typing import Dict, List, Optional, NamedTuple
 
 
-from story_teller.story.tree import StoryTree
 from story_teller.story.path import Path
+from story_teller.story.tree import StoryTree
 
 
 @dataclasses.dataclass

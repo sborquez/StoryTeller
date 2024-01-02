@@ -1,6 +1,6 @@
-from typing import List, Optional
 import logging
 import random
+from typing import List, Optional
 
 from story_teller.app.base import (
     StateMachine,
@@ -11,8 +11,8 @@ from story_teller.app.base import (
 )
 from story_teller.app.states.show import ShowState
 from story_teller.story.page import Page, PageType, Description
-from story_teller.story.tree import StoryTree, StoryTreeFactory
 from story_teller.story.path import Path
+from story_teller.story.tree import StoryTree, StoryTreeFactory
 
 
 logger = logging.getLogger(__name__)

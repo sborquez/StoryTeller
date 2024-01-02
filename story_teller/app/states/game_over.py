@@ -1,5 +1,5 @@
-from typing import List, Optional
 import logging
+from typing import List, Optional
 
 from story_teller.app.base import (
     StateMachine,
