@@ -91,7 +91,7 @@ class InteractState(State):
             .context \
             .current_path \
             .compute_karma() \
-            .to_dict()
+            .model_dump()
 
         # Update the page description.
         self._description = self._page.description.page

@@ -6,8 +6,7 @@
             "action": "root",
             "image": {
                 "path": "context.png",
-                "url": null,
-                "description": "This is the setup for your story"
+                "url": null
             },
             "karma": {
                 "technology": 0,
@@ -17,7 +16,6 @@
             },
             "description": {
                 "page":  "This is the setup for your story",
-                "action": null,
                 "image":  "This is the setup for your story"
             }
         },
@@ -27,8 +25,7 @@
             "action": "start",
             "image": {
                 "path": "start.png",
-                "url": null,
-                "description": "This is the start image"
+                "url": null
             },
             "karma": {
                 "technology": 0,
@@ -38,7 +35,6 @@
             },
             "description": {
                 "page": "This is the start page",
-                "action": "This is the start action",
                 "image": "This is the start image"
             }
         },
@@ -54,12 +50,10 @@
             },
             "image": {
                 "path": "1.png",
-                "url": null,
-                "description": "This is the action1 image"
+                "url": null
             },
             "description": {
                 "page": "This is the action1 page",
-                "action": "This is the action1 action",
                 "image": "This is the action1 image"
             }
         },
@@ -75,12 +69,10 @@
             },
             "image": {
                 "path": "2.png",
-                "url": null,
-                "description": "This is the action2 image"
+                "url": null
             },
             "description": {
                 "page": "This is the action2 page",
-                "action": "This is the action2 action",
                 "image": "This is the action2 image"
             }
         },
@@ -96,12 +88,10 @@
             },
             "image": {
                 "path": "3.png",
-                "url": null,
-                "description": "This is the action3 image"
+                "url": null
             },
             "description": {
                 "page": "This is the action3 page",
-                "action": "This is the action3 action",
                 "image": "This is the action3 image"
             }
         },
@@ -118,7 +108,6 @@
             "image": null,
             "description": {
                 "page": "This is the action4 page",
-                "action": "This is the action4 action",
                 "image": "This is the action4 image"
             }
         }
