@@ -13,6 +13,8 @@ The project is structured as follows:
 ├── LICENSE
 ├── .env
 ├── .gitignore
+├── notebooks          # Jupyter notebooks for experimenting
+│   └── prompts.ipynb  # notebook for experimenting with the LangChain
 └── story_teller
     ├── __init__.py
     ├── __main__.py  # main entry point
@@ -21,15 +23,15 @@ The project is structured as follows:
     │   ├── page.py
     │   ├── tree.py
     │   └── path.py
-    ├── gui 
+    ├── app 
     │   ├── __init__.py
-    │   ├── app.py    # main entrypoint for the GUI
-    │   └── states.py # game state machine
-    ├── agents  
+    │   ├── {ui}.py    # main entrypoint for the UI (e.g. cli for command line interface)
+    │   ├── base.py    # defines the base UI class for UI independent code of the game
+    │   └── states     # game state machine
+    ├── teller  
     │   ├── __init__.py
     │   ├── learner.py  # RL agent for learning the best story
-    │   ├── writer.py   # LLM agent for writing stories
-    │   └── drawer.py   # Multimodal LLM agent for drawing stories
+    │   └── chains.py   # Multimodal LLM chains for writing, drawing, and telling stories
     └── tools.py   # utility functions
 ```
 
@@ -49,12 +51,13 @@ pip install -r requirements.txt
 
 Use the `.env` file to set up the environment variables. The following variables are required:
 
-- `STORYTELLER_LOGS_DIR`: the directory where the logs are stored
-- `STORYTELLER_DATA_DIR`: the directory where the story data is stored
-- `STORYTELLER_OPENAI_API_KEY`: the API key for the OpenAI API
-- `STORYTELLER_GUI_WIDTH`: the width of the GUI window (default: `800`)
-- `STORYTELLER_GUI_HEIGHT`: the height of the GUI window (default: `600`)
-- `STORYTELLER_GUI_FULLSCREEN`: whether to run the GUI in fullscreen mode or not (default: `False`)
+- `STORYTELLER_LOGS_DIR`: The directory where the logs are stored
+- `STORYTELLER_DATA_DIR`: The directory where the story data is stored
+- `STORYTELLER_GUI_WIDTH`: The width of the GUI window (default: `800`)
+- `STORYTELLER_GUI_HEIGHT`: The height of the GUI window (default: `600`)
+- `STORYTELLER_GUI_FULLSCREEN`: Whether to run the GUI in fullscreen mode or not (default: `False`)
+- `GOOGLE_APPLICATION_CREDENTIALS`: Credentials path for the Google Cloud API
+- `OPENAI_API_KEY`: API key for the OpenAI API
 
 Optionally, you can set the following variables:
 
@@ -78,6 +81,13 @@ To run the GUI, run the following command:
 python -m story_teller
 ```
 
+or for a specific UI:
+
+```bash
+python -m story_teller.cli
+```
+
+
 ## How does it work?
 
 ### Story Data Structure
@@ -89,15 +99,13 @@ The story data structure is composed of three main components:
 - `Tree`: a tree is a collection of pages. It contains the root page, and all the pages with the tree structure. It is used to store and access all the pages in the story.
 
 
-### Agents
+### Teller Components
 
-The project contains three agents:
+The project contains two teller components:
 
-- `Learner`: this agent uses reinforcement learning to learn to generate the best story. It uses the Q-learning algorithm to learn the best paths that led to the best stories. It uses the players' feedback to update the Q-values.
-- `Writer`: this agent uses the OpenAI API to generate new pages for the story. It uses the `Learner` agent to select a previous generated page or generate a new one.
-- `Drawer`: this agent uses the OpenAI API to generate a image for a given page. It uses the `Writer` agent to generate the page text.
+- `Learner`: This agent uses reinforcement learning to learn to generate the best story. It uses the Q-learning algorithm to learn the best paths that led to the best stories. It uses the players' feedback to update the Q-values.
+- `Chains`: This component uses the LLM like OpenAI ChatGPT, and other APIs with a LangChain chain, to generate new pages for the story. It uses the `Learner` agent to select a previous generated page or generate a new one. It can write (text), draw (image), and tell (audio) stories.
 
+### UI
 
-### GUI
-
-The GUI is based on the Python library `PyGame`. It shows the current page text, the possible actions, the image, and the karma points.
+We defined a UI agnostic interface for the game. The UI is composed of RenderData structure defined in `story_teller/app/base.py`. The UI is responsible for rendering the game, and for handling the user input. The UI is also responsible for handling the game state machine. The UI is defined in `story_teller/app/{ui}.py`.
