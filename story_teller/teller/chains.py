@@ -14,9 +14,7 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
 
-def _gcp_tts_generator(
-        voice: str = "en-US-Neural2-C", language: str = "en-US",
-        output_folder: str = "./audio") -> Callable:
+def _gcp_tts_generator(voice: str = "en-US-Neural2-C", language: str = "en-US", output_folder: str = "./audio") -> Callable:
     def tts_generator(prompt: str) -> dict:
         # Instantiates a client
         client = texttospeech.TextToSpeechClient()
@@ -150,15 +148,15 @@ class _Prompts:
         return _Prompts.replace.copy()
 
 
-class ChainFactory:
+class ChainBuilder:
     """Chain factory class.
 
-    This class is used to create a new teller.
+    This class is used to create a new Chain.
     """
 
     @classmethod
     def from_config(cls, config: ConfigParser) -> RunnableSequence:
-        """Create a new teller.
+        """Create a new Chain.
 
         Args:
             config (ConfigParser): The configuration parser instance.
@@ -188,8 +186,8 @@ class ChainFactory:
             RunnablePassthrough.assign(page=writer_chain)
             | {
                 "page": RunnableLambda(lambda x: x["page"]),
-                "image_url": RunnableLambda(lambda x: x["page"]) | drawer,
-                "audio_file": RunnableLambda(lambda x: {"description": x["page"]["description"], "action": x["action"], "page_number": x["page_number"]}) | speaker,
+                "image": RunnableLambda(lambda x: x["page"]) | drawer,
+                "audio": RunnableLambda(lambda x: {"description": x["page"]["description"], "action": x["action"], "page_number": x["page_number"]}) | speaker,
             }
         )
         return chain
@@ -246,11 +244,10 @@ class ChainFactory:
                 model=prompter_model, temperature=prompter_temperature
             )
             | StrOutputParser()
-            | RunnableLambda(
-                lambda x: DallEAPIWrapper(
-                    model=drawer_model, size=size, quality=quality
-                ).run(x)
-            )
+            | {
+                "url": RunnableLambda(lambda x: DallEAPIWrapper(model=drawer_model, size=size, quality=quality).run(x)),
+                "description": RunnablePassthrough(),
+            }
         )
         return drawer
 
@@ -271,8 +268,9 @@ class ChainFactory:
                     "You choose: {action}. {description}."
                 )
             )
-            | RunnableLambda(
-                _gcp_tts_generator(voice, language, output_folder)
-            )
+            | {
+                "path": RunnableLambda(_gcp_tts_generator(voice, language, output_folder)),
+                "description": StrOutputParser(),
+            }
         )
         return speaker
