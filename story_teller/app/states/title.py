@@ -11,7 +11,7 @@ from story_teller.app.base import (
 from story_teller.app.states import StateRegistry
 from story_teller.story.page import Page, PageType, Description
 from story_teller.story.path import Path
-from story_teller.story.tree import StoryTree, StoryTreeFactory
+from story_teller.story.tree import StoryTree
 
 
 logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class TitleState(State):
     @staticmethod
     def _get_new_story_tree(description: str) -> StoryTree:
         """Get a new story tree."""
-        story_tree = StoryTreeFactory.from_scratch()
+        story_tree = StoryTree.from_scratch()
         story_tree.add_page(
             page=Page(
                 page_type=PageType.CONTEXT,

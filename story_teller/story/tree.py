@@ -145,10 +145,6 @@ class StoryTree:
         for removed_uuid in removed_uuids:
             self.pages.remove_page(removed_uuid)
 
-
-class StoryTreeFactory:
-    """A factory for creating story trees."""
-
     @classmethod
     def from_scratch(cls) -> StoryTree:
         """Create an empty tree."""
@@ -174,10 +170,6 @@ class StoryTreeFactory:
             root=root, pages_repository=pages, tree_source=tree_source
         )
         return tree
-
-
-class StoryTreeWriter:
-    """Save a tree to persistent storage."""
 
     @classmethod
     def to_json(cls, tree: StoryTree, json_file: Optional[str] = None) -> None:

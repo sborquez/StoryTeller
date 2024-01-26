@@ -1,34 +1,24 @@
+from __future__ import annotations
 from typing import Any
 from configparser import ConfigParser
+
+from story_teller.teller.chains import ChainBuilder, RunnableSequence
 
 
 class Teller:
     """Entry point for the story teller."""
 
-    def __init__(self, writer: Any, learner: Any,
-                 drawer: Any, repository: Any) -> None:
+    def __init__(self, chain: RunnableSequence, learner: Any) -> None:
         """Initialize the story teller.
 
         Args:
-            writer (Any): Generative model for writing pages and images
-                descriptions.
+            chain (RunnableSequence): A Chain for writing pages, audio and images
+                with a generative model.
             learner (Any): Best story path generator, learns from user
                 feedback how to generate the best story.
-            drawer (Any): Generative model for drawing images.
-            repository (Any): Media repository, stores and retrieves images
-                from storage.
         """
-        self._writer = writer
+        self._chain = chain
         self._learner = learner
-        self._drawer = drawer
-        self._repository = repository
-
-
-class TellerFactory:
-    """Teller factory class.
-
-    This class is used to create a new teller.
-    """
 
     @classmethod
     def from_config(cls, config: ConfigParser) -> Teller:
@@ -41,10 +31,7 @@ class TellerFactory:
             Teller: A new teller instance.
         """
 
-    @classmethod
-    def from_scratch() -> Teller:
-        """Create a new teller.
-
-        Returns:
-            Teller: A new teller instance.
-        """
+        return Teller(
+            chain=ChainBuilder.from_config(config),
+            learner=None,
+        )
