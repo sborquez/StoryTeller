@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Iterable, Optional
 
 from story_teller.story.page import KarmaPoints, Page, PageType
 from story_teller.story.tree import StoryTree, TreeNode
@@ -16,17 +16,17 @@ class Path:
     def __init__(self, story_tree: StoryTree) -> None:
         if story_tree.get_root() is None:
             raise ValueError("The story tree has no root.")
-        self.starting_page_node = story_tree.get_root()
-        self._current_page_node = self.starting_page_node
+        self.root_page_node = story_tree.get_root()
+        self._current_page_node = self.root_page_node
         self._story_tree = story_tree
         self._is_finished = False
         self._score = 0.0
 
         self._pages_uuid = [
-            self.starting_page_node.page_uuid
+            self.root_page_node.page_uuid
         ]
         self._actions_taken = [
-            self._story_tree.get_page(self.starting_page_node.page_uuid).action
+            self._story_tree.get_page(self.root_page_node.page_uuid).action
         ]
 
     def is_finished(self) -> bool:
@@ -37,7 +37,11 @@ class Path:
         """Return the current page."""
         return self._story_tree.get_page(self._current_page_node.page_uuid)
 
-    def view_action_options(self) -> Dict[str, TreeNode]:
+    def get_current_page_node(self) -> TreeNode:
+        """Return the current page node."""
+        return self._current_page_node
+
+    def view_action_options(self) -> dict[str, TreeNode]:
         """Return the possible actions for the current page."""
         actions = {}
         for child in self._current_page_node.children:
@@ -82,11 +86,11 @@ class Path:
             karma_points += page.karma
         return karma_points
 
-    def get_pages(self) -> List[Page]:
+    def get_pages(self) -> list[Page]:
         """Return the list of pages in the path."""
         return [self._story_tree.get_page(uuid) for uuid in self._pages_uuid]
 
-    def get_actions_taken(self) -> List[str]:
+    def get_actions_taken(self) -> list[str]:
         """Return the list of actions in the path."""
         return list(self._actions_taken)
 
@@ -102,3 +106,10 @@ class Path:
     def get_score(self) -> Optional[float]:
         """Return the score of the path."""
         return self._score if self._is_finished else None
+
+    def __len__(self) -> int:
+        return len(self._pages_uuid) - 1
+
+    def __iter__(self) -> Iterable[Page]:
+        for page_uuid in self._pages_uuid:
+            yield self._story_tree.get_page(page_uuid)

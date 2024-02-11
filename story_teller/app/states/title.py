@@ -9,6 +9,7 @@ from story_teller.app.base import (
     RenderSceneLayoutType,
 )
 from story_teller.app.states import StateRegistry
+from story_teller.teller.teller import Teller
 from story_teller.story.page import Page, PageType, Description
 from story_teller.story.path import Path
 from story_teller.story.tree import StoryTree
@@ -151,6 +152,7 @@ class TitleState(State):
                         self._state_machine.context.current_path = \
                             self._start_new_path(
                                 self._state_machine.context.story_tree,
+                                self._state_machine.context.teller,
                             )
                         next_state = StateRegistry.get("ShowState")
                         return next_state(self._state_machine)
@@ -197,13 +199,8 @@ class TitleState(State):
         return story_tree
 
     @staticmethod
-    def _start_new_path(story_tree: StoryTree) -> Path:
+    def _start_new_path(story_tree: StoryTree, teller: Teller) -> Path:
         """Get a new path."""
         new_path = Path(story_tree)
-        # TODO: move this responsibility to Teller
-        actions = new_path.view_action_options()
-        if len(actions) == 0:
-            raise RuntimeError("No action available.")
-        selected = random.choice(list(actions.keys()))
-        new_path.take_action(selected)
+        new_path = teller.starting_page(new_path, story_tree)
         return new_path

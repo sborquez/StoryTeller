@@ -81,6 +81,9 @@ class KarmaPoints(pydantic.BaseModel):
             control=self.cap(self.control - other.control),
         )
 
+    def to_list(self) -> list[float]:
+        return [self.technology, self.happiness, self.safety, self.control]
+
 
 class PageType(StrEnum):
     """The type of the page."""
@@ -102,6 +105,7 @@ class Page(pydantic.BaseModel):
     action: Optional[str] = pydantic.Field(default=None)
     karma: KarmaPoints = pydantic.Field(default=KarmaPoints())
     description: Optional[Description] = pydantic.Field(default=None)
+    # TODO: move the image to a MediaRepository and use the uuid to reference the page
     image: Optional[Image] = pydantic.Field(default=None)
 
 

@@ -110,6 +110,22 @@
                 "page": "This is the action4 page",
                 "image": "This is the action4 image"
             }
+        },
+        "6": {
+            "uuid": "6",
+            "page_type": "start",
+            "action": "start",
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "image": null,
+            "description": {
+                "page": "This is another start page",
+                "image": "This is another start image"
+            }
         }
     },
     "root": {
@@ -136,6 +152,10 @@
                         "children": []
                     }
                 ]
+            },
+            {
+                "page_uuid": "6",
+                "children": []
             }
         ]
     } 

@@ -95,13 +95,14 @@ class StoryTree:
 
     def add_page(self,
                  page: Page, parent_node: Optional[TreeNode] = None
-                 ) -> None:
+                 ) -> TreeNode:
         self.pages.add_page(page)
         new_node = TreeNode(page.uuid, parent=parent_node)
         if parent_node is None:
             self.root = new_node
         else:
             parent_node.add_node(new_node)
+        return new_node
 
     def get_root(self) -> Optional[TreeNode]:
         return self.root

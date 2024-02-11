@@ -15,6 +15,9 @@ from langchain.prompts import PromptTemplate
 
 
 def _gcp_tts_generator(voice: str = "en-US-Neural2-C", language: str = "en-US", output_folder: str = "./audio") -> Callable:
+    # Create output folder
+    os.makedirs(output_folder, exist_ok=True)
+
     def tts_generator(prompt: str) -> dict:
         # Instantiates a client
         client = texttospeech.TextToSpeechClient()
@@ -66,14 +69,14 @@ class _Prompts:
     1. Understand the <context> for setting up an engaging story.
     2. The user will respond with the <action> taken from the last page.
     3. If it is the first page, the action should be "start".
-    4. Write the next page of the story from the <action> and the current <karma_points>. Write the consecuence of the action and current state in the page's <description>, a list of 2 possible <next_action>s, and the <karma_points> change for the story.
+    4. Write the next page of the story from the <action> and the current <karma_points>. Write the consecuence of the action and current state in the page's <description>, a list of MAX_ACTIONS possible <next_action>s, and the <karma_points> change for the story.
     5. Repeat the step 2 to 4 until you reach the max length of the story. If you reach the ending page, there should be only one <next_action> with the "End" action.
     """
 
     writer_rules = """
     The writer rules are:
     1. The first page (number 1) always start with the "start" action. No other action is allowed.
-    2. The last page (number MAX_PAGES) always end by one "End" next_action. No other next_action is allowed.
+    2. The last page (number MAX_PAGES) always end by one "end" next_action. No other next_action is allowed.
     3. An action is a string of max 50 characters, with only the description of the action.
     4. A description is a string of max 250 characters.
     5. The karma_points is a list of 4 float numbers, representing the change for the story in 4 dimensions:
@@ -114,6 +117,7 @@ class _Prompts:
     # Default prompt replacements
     replace = {
         "MAX_PAGES": "5",
+        "MAX_ACTIONS": "5",
         "STYLE": "90s aesthetics, with a dark style and pixel art graphics. Using the following colors: #000000, #ffffff, #ff0000, #00ff00, #0000ff, #ffff00, #ff00ff, #00ffff",
         "CHARACTERS": 'Sebastian, Fran',
         "CATEGORIES": 'sci-fi, utopia, dystopia',
@@ -171,12 +175,12 @@ class ChainBuilder:
         # Writer
         writer_chain = cls._build_writer(config, prompt_replace)
         # Drawer
-        if config.get("writer", "drawer", fallback="disabled") == "enabled":
+        if config.get("chain", "drawer", fallback="disable") == "enable":
             drawer = cls._build_drawer(config, prompt_replace)
         else:
             drawer = RunnableLambda(lambda x: None)
         # Speaker
-        if config.get("writer", "speaker", fallback="disabled") == "enabled":
+        if config.get("chain", "speaker", fallback="disable") == "enable":
             speaker = cls._build_speaker(config, prompt_replace)
         else:
             speaker = RunnableLambda(lambda x: None)
@@ -270,7 +274,7 @@ class ChainBuilder:
             )
             | {
                 "path": RunnableLambda(_gcp_tts_generator(voice, language, output_folder)),
-                "description": StrOutputParser(),
+                "speech": RunnableLambda(lambda x: x.text),
             }
         )
         return speaker

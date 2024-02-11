@@ -271,8 +271,8 @@ class Context:
     path, etc.
     """
     story_tree: StoryTree
-    current_path: Optional[Path] = None
     teller: Teller
+    current_path: Optional[Path] = None
 
     @classmethod
     def from_config(cls, config: ConfigParser) -> Context:

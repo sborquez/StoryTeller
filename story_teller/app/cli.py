@@ -11,7 +11,6 @@ from story_teller.app.base import (
     RenderData, RenderControlsData, RenderSceneLayoutType,
 )
 from story_teller.app.states.title import TitleState
-from story_teller.story.tree import StoryTreeFactory
 
 
 class CLIApp(App):
