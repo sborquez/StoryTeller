@@ -64,7 +64,7 @@ class ShowState(State):
             .context \
             .current_path \
             .compute_karma() \
-            .to_dict()
+            .model_dump()
 
     def on_exit(self) -> None:
         """Exit the state.

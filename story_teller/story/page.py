@@ -10,49 +10,49 @@ class Image(pydantic.BaseModel):
     """Image for the page."""
 
     # Local path to the image.
-    path: Optional[str] = pydantic.Field(default=None)
+    path: Optional[str] = pydantic.Field(
+        default=None,
+        description="Local path to the image. If the image is not local, use the url field instead.",
+    )
     # Remote url to the image.
-    url: Optional[str] = pydantic.Field(default=None)
-    # Alt text for the image. Should be the same as in the description.
-    description: Optional[str] = pydantic.Field(default=None)
-
-    def load(self):
-        """Load the image from the path."""
-        # TODO: Implement
-        pass
-
-    def save(self):
-        """Save the image to the path."""
-        # TODO: Implement
-        pass
+    url: Optional[str] = pydantic.Field(
+        default=None,
+        description="Remote url to the image. If the image is local, use the path field instead.",
+    )
 
 
 class Description(pydantic.BaseModel):
-    """Description of the page."""
+    """Description of the page in the story."""
 
-    # The description of the currect state of the world.
-    page: str
-    # The description of the consequences of the action
-    action: Optional[str] = pydantic.Field(default=None)
-    # A visual description of the current state of the world.
-    image: Optional[str] = pydantic.Field(default=None)
+    page: str = pydantic.Field(
+        description="The description of the page from the story."
+    )
+
+    image: Optional[str] = pydantic.Field(
+        default=None,
+        description="A visual description of the current page of the story."
+    )
 
 
 class KarmaPoints(pydantic.BaseModel):
-    """Points of story karma. The values are between -1 and 1."""
+    """Points of change of karma for a page story. The values are between -1 and 1. The sum of all karma points is the total karma points of the story."""
 
-    # The point in the dimension of technology. Higher is more advanced.
-    # Lower is no technology.
-    technology: float = pydantic.Field(default=0.0)
-    # The point in the dimension of happiness. Higher is humans are happier.
-    # Lower is humans are unhappier.
-    happiness: float = pydantic.Field(default=0.0)
-    # The point in the dimension of safety. Higher is humans are safer.
-    # Lower is humans doesn't exist.
-    safety: float = pydantic.Field(default=0.0)
-    # The point in the dimension of control. Higher is humans have more
-    # control. Lower is AGI has more control.
-    control: float = pydantic.Field(default=0.0)
+    technology: float = pydantic.Field(
+        default=0.0,
+        description="The dimension of technology. Higher is more advanced. Lower is no technology.",
+    )
+    happiness: float = pydantic.Field(
+        default=0.0,
+        description="The dimension of happiness. Higher is humans are happier. Lower is humans are unhappier.",
+    )
+    safety: float = pydantic.Field(
+        default=0.0,
+        description="The dimension of safety. Higher is humans are safer. Lower is humans doesn't exist.",
+    )
+    control: float = pydantic.Field(
+        default=0.0,
+        description="The dimension of control. Higher is humans have more control. Lower is AGI has more control.",
+    )
 
     @classmethod
     def cap(cls, value: float) -> float:
@@ -81,14 +81,8 @@ class KarmaPoints(pydantic.BaseModel):
             control=self.cap(self.control - other.control),
         )
 
-    def to_dict(self) -> Dict[str, float]:
-        """Return a dictionary representation of the karma points."""
-        return {
-            "technology": self.technology,
-            "happiness": self.happiness,
-            "safety": self.safety,
-            "control": self.control,
-        }
+    def to_list(self) -> list[float]:
+        return [self.technology, self.happiness, self.safety, self.control]
 
 
 class PageType(StrEnum):
@@ -111,6 +105,7 @@ class Page(pydantic.BaseModel):
     action: Optional[str] = pydantic.Field(default=None)
     karma: KarmaPoints = pydantic.Field(default=KarmaPoints())
     description: Optional[Description] = pydantic.Field(default=None)
+    # TODO: move the image to a MediaRepository and use the uuid to reference the page
     image: Optional[Image] = pydantic.Field(default=None)
 
 

@@ -1,25 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from configparser import ConfigParser
 import dataclasses
 from enum import StrEnum
-from typing import Dict, List, Optional, NamedTuple
-
+from typing import Optional, NamedTuple
 
 from story_teller.story.path import Path
 from story_teller.story.tree import StoryTree
-
-
-@dataclasses.dataclass
-class Context:
-    """Context class.
-
-    This class is used to represent the context or shared data between the
-    states. For example, the context can contain the story tree, the current
-    path, etc.
-    """
-    story_tree: StoryTree
-    # teller: Teller
-    current_path: Optional[Path] = None
+from story_teller.teller.teller import Teller
 
 
 class Event(ABC):
@@ -131,7 +119,7 @@ class RenderHUDData(NamedTuple):
     This class is used to represent the render HUD data.
     """
     # TODO: Add more HUD data
-    karma: Dict[str, float]
+    karma: dict[str, float]
     alert: Optional[str]
 
 
@@ -140,13 +128,13 @@ class RenderControlsData(NamedTuple):
 
     This class is used to represent the render controls data.
     """
-    choices_name: List[str]
-    choices_text: List[str]
-    choices_enabled: List[bool]
+    choices_name: list[str]
+    choices_text: list[str]
+    choices_enabled: list[bool]
 
-    text_input_target: List[str]
-    text_input_placeholder: List[Optional[str]]
-    text_input_enabled: List[bool]
+    text_input_target: list[str]
+    text_input_placeholder: list[Optional[str]]
+    text_input_enabled: list[bool]
 
 
 class RenderData(NamedTuple):
@@ -178,7 +166,7 @@ class State(ABC):
         self._state_machine = state_machine
 
     @abstractmethod
-    def on_enter(self):
+    def on_enter(self) -> None:
         """Enter the state.
 
         This method is called when the state is entered.
@@ -186,7 +174,7 @@ class State(ABC):
         pass
 
     @abstractmethod
-    def on_exit(self):
+    def on_exit(self) -> None:
         """Exit the state.
 
         This method is called when the state is exited.
@@ -205,7 +193,7 @@ class State(ABC):
         pass
 
     @abstractmethod
-    def handle_events(self, events: List[Event]) -> Optional[State]:
+    def handle_events(self, events: list[Event]) -> Optional[State]:
         """Handle events.
 
         This method is called when the state is handling events.
@@ -244,7 +232,7 @@ class StateMachine:
         self.current_state = new_state
         self.current_state.on_enter()
 
-    def handle_events(self, events: List[Event] = []) -> bool:
+    def handle_events(self, events: list[Event] = []) -> bool:
         """Handle events.
 
         Args:
@@ -272,6 +260,41 @@ class StateMachine:
             self.current_state.on_exit()
         self.current_state = None
         self.in_end_state = True
+
+
+@dataclasses.dataclass
+class Context:
+    """Context class.
+
+    This class is used to represent the context or shared data between the
+    states. For example, the context can contain the story tree, the current
+    path, etc.
+    """
+    story_tree: StoryTree
+    teller: Teller
+    current_path: Optional[Path] = None
+
+    @classmethod
+    def from_config(cls, config: ConfigParser) -> Context:
+        """Build a new context.
+
+        Returns:
+            Context: A new context instance.
+        """
+        story_file = config.get("story", "story_file", fallback=None)
+        if story_file is None:
+            story_tree = StoryTree.from_scratch()
+        else:
+            story_tree = StoryTree.from_json(story_file)
+
+        teller = Teller.from_config(config)
+
+        context = Context(
+            story_tree=story_tree,
+            current_path=None,
+            teller=teller,
+        )
+        return context
 
 
 class App(ABC):
@@ -305,4 +328,34 @@ class App(ABC):
     @abstractmethod
     def _clean_up(self) -> None:
         """Clean up the app."""
+        pass
+
+
+class AppFactory(ABC):
+    """Abstract app factory class.
+
+    This class is used to create a new app.
+    """
+
+    @classmethod
+    @abstractmethod
+    def from_config(cls, config: ConfigParser) -> App:
+        """Create a new app.
+
+        Args:
+            config (ConfigParser): The configuration parser instance.
+
+        Returns:
+            App: A new app instance.
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_scratch(cls) -> App:
+        """Create a new app.
+
+        Returns:
+            App: A new app instance.
+        """
         pass

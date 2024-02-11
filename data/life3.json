@@ -1,0 +1,27 @@
+{
+    "pages": {
+        "0": {
+            "uuid": "0",
+            "page_type": "context",
+            "action": "root",
+            "image": {
+                "path": null,
+                "url": null
+            },
+            "karma": {
+                "technology": 0,
+                "happiness": 0,
+                "safety": 0,
+                "control": 0
+            },
+            "description": {
+                "page":  "This is the alpha team tale. This team created the first AGI, and they are keeping it a secret from the world. They are trying to figure out how to control it without dooming the humanity.",
+                "image":  "This is the setup for your story"
+            }
+        }
+    },
+    "root": {
+        "page_uuid": "0",
+        "children": []
+    }
+}

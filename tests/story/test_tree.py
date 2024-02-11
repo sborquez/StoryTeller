@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from story_teller.story.page import Page, PageType, KarmaPoints
 from story_teller.story.tree import (
-    TreeNode, StoryTree, StoryTreeFactory, StoryTreeWriter
+    TreeNode, StoryTree
 )
 
 
@@ -98,20 +98,9 @@ def test_TreeNode_remove_node() -> None:
     assert set(removed_uuids) == set(["child_uuid", "grandchild_uuid"])
 
 
-def test_StoryTree_from_json(sample_data_file) -> None:
-    """Test that a tree can be created from a JSON string."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
-    assert isinstance(tree, StoryTree)
-    assert tree.root.page_uuid == "0"
-    assert len(tree.root.children) == 2
-    assert tree.pages["0"].page_type == PageType.START
-    assert tree.pages["1"].page_type == PageType.ACTION
-    assert tree.pages["2"].page_type == PageType.END
-
-
 def test_StoryTree_add_page(sample_data_file: str) -> None:
     """Test that a page can be added to a tree."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert len(tree.root.children) == 2
     assert len(tree.root.children[1].children) == 0
     assert len(tree.pages) == 5
@@ -132,13 +121,13 @@ def test_StoryTree_add_page(sample_data_file: str) -> None:
 
 def test_StoryTree_get_root(sample_data_file: str) -> None:
     """Test that the root of a tree can be retrieved."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert tree.get_root() is tree.root
 
 
 def test_StoryTree_get_page(sample_data_file: str) -> None:
     """Test that a page can be retrieved from a tree."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert tree.get_page("0") is tree.pages["0"]
     assert tree.get_page("1") is tree.pages["1"]
     assert tree.get_page("2") is tree.pages["2"]
@@ -148,7 +137,7 @@ def test_StoryTree_get_page(sample_data_file: str) -> None:
 
 def test_StoryTree_search_page_node(sample_data_file: str) -> None:
     """Test that a page node can be retrieved from a tree."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert tree.search_page_node("0") is tree.root
     assert tree.search_page_node("1") is tree.root.children[0]
     assert tree.search_page_node("2") is tree.root.children[0].children[0]
@@ -159,7 +148,7 @@ def test_StoryTree_search_page_node(sample_data_file: str) -> None:
 
 def test_StoryTree_remove_page(sample_data_file: str) -> None:
     """Test that a page can be removed from a tree."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert len(tree.root.children) == 2
     assert len(tree.root.children[0].children) == 2
     assert len(tree.pages) == 5
@@ -172,17 +161,17 @@ def test_StoryTree_remove_page(sample_data_file: str) -> None:
     assert len(tree.pages) == 2
 
 
-def test_StoryTreeFactory_from_scratch() -> None:
+def test_StoryTree_from_scratch() -> None:
     """Test that an empty tree can be created."""
-    tree = StoryTreeFactory.from_scratch()
+    tree = StoryTree.from_scratch()
     assert tree.root is None
     print(tree.pages)
     assert len(tree.pages) == 0
 
 
-def test_StoryTreeFactory_from_json(sample_data_file: str) -> None:
+def test_StoryTree_from_json(sample_data_file: str) -> None:
     """Test that a tree can be created from a JSON string."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
+    tree = StoryTree.from_json(sample_data_file)
     assert isinstance(tree, StoryTree)
     assert tree.root.page_uuid == "0"
     assert len(tree.root.children) == 2
@@ -191,11 +180,11 @@ def test_StoryTreeFactory_from_json(sample_data_file: str) -> None:
     assert tree.pages["2"].page_type == PageType.END
 
 
-def test_StoryTreeWriter_to_json(sample_data_file: str) -> None:
+def test_StoryTree_to_json(sample_data_file: str) -> None:
     """Test that a tree can be written to a JSON string."""
-    tree = StoryTreeFactory.from_json(sample_data_file)
-    StoryTreeWriter.to_json(tree, 'test.json')
-    tree_2 = StoryTreeFactory.from_json('test.json')
+    tree = StoryTree.from_json(sample_data_file)
+    StoryTree.to_json(tree, 'test.json')
+    tree_2 = StoryTree.from_json('test.json')
     assert isinstance(tree_2, StoryTree)
     assert tree_2.root.page_uuid == "0"
     assert len(tree_2.root.children) == 2

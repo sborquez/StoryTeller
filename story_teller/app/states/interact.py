@@ -10,7 +10,10 @@ from story_teller.app.base import (
     RenderSceneLayoutType,
 )
 from story_teller.app.states import StateRegistry
-from story_teller.story.page import PageType
+from story_teller.teller.teller import Teller
+from story_teller.story.path import Path
+from story_teller.story.tree import StoryTree
+from story_teller.story.page import Page, PageType
 
 
 logger = logging.getLogger(__name__)
@@ -53,10 +56,11 @@ class InteractState(State):
         This method is called when the state is entered.
         """
         logger.info("Entering interact state.")
-        self._page = self._state_machine\
-            .context\
-            .current_path\
-            .get_current_page()
+        self._page = self._get_current_page(
+            self._state_machine.context.teller,
+            self._state_machine.context.current_path,
+            self._state_machine.context.story_tree,
+        )
         # Update title
         if self._page.page_type == PageType.START:
             self._title = "Your story starts here!"
@@ -69,13 +73,11 @@ class InteractState(State):
             self._layout = RenderSceneLayoutType.MOVIE
             self._end_page = True
         else:
-            # TODO: Move this responsibility to the Teller.
-            self._next_actions = self._state_machine\
-                .context\
-                .current_path\
-                .view_action_options()\
-                .keys()
-
+            self._next_actions = self._select_next_action_options(
+                self._state_machine.context.teller,
+                self._state_machine.context.current_path,
+                self._state_machine.context.story_tree,
+            )
             # Update the choices.
             self._choices = {}
             for action in self._next_actions:
@@ -91,7 +93,7 @@ class InteractState(State):
             .context \
             .current_path \
             .compute_karma() \
-            .to_dict()
+            .model_dump()
 
         # Update the page description.
         self._description = self._page.description.page
@@ -155,7 +157,7 @@ class InteractState(State):
 
             # Choices events
             elif isinstance(event, ChoiceInputEvent):
-                logging.info(f"Choice event: {event.choice}")
+                logger.info(f"Choice event: {event.choice}")
                 self._state_machine\
                     .context\
                     .current_path\
@@ -166,3 +168,36 @@ class InteractState(State):
             elif isinstance(event, QuitEvent):
                 self._state_machine.end()
                 return None
+
+    @staticmethod
+    def _select_next_action_options(teller: Teller, path: Path, story_tree: StoryTree) -> list:
+        """Select the next actions for the story.
+
+        Args:
+            teller (Teller): The teller instance.
+            path (Path): The current path of the story.
+
+        Returns:
+            list: The next actions for the story.
+        """
+        return teller.select_next_action_options(path, story_tree).keys()
+
+    @staticmethod
+    def _get_current_page(teller: Teller, path: Path, story_tree: StoryTree) -> Page:
+        """Get the current page.
+
+        Args:
+            teller (Teller): The teller instance.
+            path (Path): The current path of the story.
+            story_tree (StoryTree): The story tree.
+
+        Returns:
+            Page: The current page.
+        """
+        page = path.get_current_page()
+        if page.description is None:
+            page, children = teller.generate_current_page(page, path, story_tree)
+            for child in children:
+                current_page_node = path.get_current_page_node()
+                story_tree.add_page(child, parent_node=current_page_node)
+        return page

@@ -6,12 +6,11 @@ from colorama import just_fix_windows_console
 from termcolor import colored
 
 from story_teller.app.base import (
-    App, Context,
+    App, AppFactory, Context,
     Event, AlertSystemEvent, ChoiceInputEvent, TextInputEvent, QuitEvent,
     RenderData, RenderControlsData, RenderSceneLayoutType,
 )
 from story_teller.app.states.title import TitleState
-from story_teller.story.tree import StoryTreeFactory
 
 
 class CLIApp(App):
@@ -20,12 +19,11 @@ class CLIApp(App):
     This is the user interface for the CLI version of the app.
     """
 
-    WIDTH = 80
-    HEIGHT = 24
-
-    def __init__(self, context: Context) -> None:
+    def __init__(self, context: Context, width: int, height: int) -> None:
         """Initialize the CLI app."""
         super().__init__(context)
+        self.WIDTH = width
+        self.HEIGHT = height
 
     def run(self) -> None:
         """Run the CLI app.
@@ -270,13 +268,13 @@ class CLIApp(App):
         # Rotating loading animation in the center (horizontal and vertical)
         # below the credits
         loading = ".--^^--."
-        print("\n" * (self.HEIGHT//2 - 1))
+        print("\n" * (self.HEIGHT // 2 - 1))
         print(colored(credits.center(self.WIDTH), "black", "on_cyan"))
         print()
         print("Loading".center(self.WIDTH))
         print()
-        print("\n" * (self.HEIGHT//2 - 3))
-        move_up = "\033[F" * (self.HEIGHT//2 - 3)
+        print("\n" * (self.HEIGHT // 2 - 3))
+        move_up = "\033[F" * (self.HEIGHT // 2 - 3)
         print(move_up, end="")
         for _ in range(int(len(loading) * 2.5)):
             print("\033[F", end="")
@@ -286,11 +284,11 @@ class CLIApp(App):
         # Clean up the loading animation
         print("\033[F", end="")
         print(" " * self.WIDTH, end="")
-        print("\033[F"*2, end="")
+        print("\033[F" * 2, end="")
         print("Done!".center(self.WIDTH))
         print()
         print("Press [Enter] to continue...".center(self.WIDTH))
-        print("\n" * (self.HEIGHT//2 - 1))
+        print("\n" * (self.HEIGHT // 2 - 1))
         input()
 
     def _render_main_layout(self, render_data: RenderData) -> None:
@@ -343,10 +341,11 @@ class CLIApp(App):
         self._show_control_ui(render_data)
 
 
-class CLIAppFactory:
+class CLIAppFactory(AppFactory):
 
     DEFAULT_CONFIG = {
-        "story_file": None,
+        "width": 80,
+        "height": 24,
     }
 
     @classmethod
@@ -361,19 +360,10 @@ class CLIAppFactory:
         Returns:
             CLIApp: The CLI app.
         """
-        story_file = config.get(
-            "story", "story_file", fallback=cls.DEFAULT_CONFIG["story_file"]
-        )
-        if story_file is None:
-            story_tree = StoryTreeFactory.from_scratch()
-        else:
-            story_tree = StoryTreeFactory.from_json(story_file)
-
-        context = Context(
-            story_tree=story_tree,
-            current_path=None,
-        )
-        return CLIApp(context)
+        context = Context.from_config(config)
+        width = config.getint("cli", "width", fallback=cls.DEFAULT_CONFIG["width"])
+        height = config.getint("cli", "height", fallback=cls.DEFAULT_CONFIG["height"])
+        return CLIApp(context, width, height)
 
     @classmethod
     def from_scratch(cls) -> CLIApp:
@@ -384,9 +374,7 @@ class CLIAppFactory:
         Returns:
             CLIApp: The CLI app.
         """
-        settings = cls.DEFAULT_CONFIG
-        app = cls.build_from_config(settings)
-        return app
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
