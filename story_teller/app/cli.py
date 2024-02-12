@@ -1,6 +1,5 @@
 from configparser import ConfigParser
 import time
-from typing import List
 
 from colorama import just_fix_windows_console
 from termcolor import colored
@@ -10,7 +9,6 @@ from story_teller.app.base import (
     Event, AlertSystemEvent, ChoiceInputEvent, TextInputEvent, QuitEvent,
     RenderData, RenderControlsData, RenderSceneLayoutType,
 )
-from story_teller.app.states.title import TitleState
 
 
 class CLIApp(App):
@@ -25,26 +23,11 @@ class CLIApp(App):
         self.WIDTH = width
         self.HEIGHT = height
 
-    def run(self) -> None:
-        """Run the CLI app.
-
-        This method is used to run the CLI app.
-        """
-        title_state = TitleState(self._state_machine)
-        self._state_machine.push(title_state)
-        self._start()
-        try:
-            self._loop()
-        except KeyboardInterrupt:
-            pass
-        self._clean_up()
-
     def _start(self) -> None:
         """Start the CLI app.
 
         This method is used to start the CLI app.
         """
-        self._running = True
         # use Colorama to make Termcolor work on Windows too
         just_fix_windows_console()
 
@@ -85,7 +68,7 @@ class CLIApp(App):
         self._clear_screen()
         print(colored("Goodbye! thanks for playing!", "black", "on_green"))
 
-    def _get_system_events(self, layout: RenderSceneLayoutType) -> List[Event]:
+    def _get_system_events(self, layout: RenderSceneLayoutType) -> list[Event]:
         match layout:
             case RenderSceneLayoutType.MAIN:
                 return []
@@ -94,13 +77,13 @@ class CLIApp(App):
             case RenderSceneLayoutType.MOVIE:
                 return [AlertSystemEvent("ready", "trigger")]
 
-    def _get_user_choice(self, control: RenderControlsData) -> List[Event]:
+    def _get_user_choice(self, control: RenderControlsData) -> list[Event]:
         """Get the events.
 
         This method is used to get the events from the user choice input.
 
         Returns:
-            List[Event]: A list of events.
+            list[Event]: A list of events.
         """
         choices = []
         for name, enabled in zip(
@@ -122,13 +105,13 @@ class CLIApp(App):
         else:
             return [AlertSystemEvent("Invalid choice", "error")]
 
-    def _get_user_text_input(self, control: RenderControlsData) -> List[Event]:
+    def _get_user_text_input(self, control: RenderControlsData) -> list[Event]:
         """Get the events.
 
         This method is used to get the events from the user text input.
 
         Returns:
-            List[Event]: A list of events.
+            list[Event]: A list of events.
         """
         text_input_events = []
         for target, enabled in zip(
@@ -383,7 +366,6 @@ if __name__ == "__main__":
 
     # Load configuration
     load_dotenv()
-    # config = ConfigParser()
     config = ConfigParser(os.environ)
     if os.path.exists(os.getenv("STORYTELLER_CONFIG_FILE")):
         config.read(os.getenv("STORYTELLER_CONFIG_FILE"))
