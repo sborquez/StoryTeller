@@ -145,7 +145,7 @@ class PageRepository:
                 "page_type": page.page_type.value,
                 "action": page.action,
                 "karma": page.karma.model_dump(),
-                "description": page.description.model_dump(),
+                "description": page.description.model_dump() if page.description else None,
                 "image": page.image.model_dump() if page.image else None,
             }
         return pages
