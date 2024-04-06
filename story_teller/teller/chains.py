@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 from configparser import ConfigParser
 import uuid
 import os
@@ -12,31 +12,37 @@ from langchain_core.runnables import (
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
+import requests
 
 
-def _gcp_tts_generator(voice: str = "en-US-Neural2-C", language: str = "en-US", output_folder: str = "./audio") -> Callable:
+def _gcp_tts_generator(voice: str = "en-US-Neural2-C", language: str = "en-US", output_folder: str = "./audio", chain_id: Optional[str] = None) -> Callable:
     # Create output folder
     os.makedirs(output_folder, exist_ok=True)
 
-    def tts_generator(prompt: str) -> dict:
-        # Instantiates a client
-        client = texttospeech.TextToSpeechClient()
+    # Instantiates a client
+    client = texttospeech.TextToSpeechClient()
 
+    # Select the type of audio file you want returned
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3,
+        pitch=4.0,
+        speaking_rate=1.20,
+    )
+
+    # Build the voice request, select the language code and voice name
+    voice_config = texttospeech.VoiceSelectionParams(
+        language_code=language, name=voice
+    )
+
+    # Temporal solution to count the number of files generated
+    counts = 0
+
+    def speech_generator(prompt: str) -> dict:
+        nonlocal counts
+        counts += 1
         # Set the text input to be synthesized
         text = prompt.text
         synthesis_input = texttospeech.SynthesisInput(text=text)
-
-        # Build the voice request, select the language code and voice name
-        voice_config = texttospeech.VoiceSelectionParams(
-            language_code=language, name=voice
-        )
-
-        # Select the type of audio file you want returned
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3,
-            pitch=4.0,
-            speaking_rate=1.20,
-        )
 
         # Perform the text-to-speech request on the text input with the
         # selected voice parameters and audio file type
@@ -47,13 +53,62 @@ def _gcp_tts_generator(voice: str = "en-US-Neural2-C", language: str = "en-US", 
         )
 
         # The response's audio_content is binary.
-        random_name = f"{str(uuid.uuid4())}.mp3"
+        if chain_id is not None:
+            random_name = f"{chain_id}_{counts:04}_{str(uuid.uuid4())}.mp3"
+        else:
+            random_name = f"{counts:04}_{str(uuid.uuid4())}.mp3"
         output_file = os.path.join(output_folder, random_name)
         with open(output_file, "wb") as out:
             # Write the response to the output file.
             out.write(response.audio_content)
         return output_file
-    return tts_generator
+    return speech_generator
+
+
+def _dalle3_generator(
+    model: str = "dall-e-3",
+    size: str = "1024x1024",
+    quality: str = "standard",
+    download: str = "disable",
+    output_folder: str = "./images",
+    chain_id: Optional[str] = None
+) -> Callable:
+
+    # Create output folder
+    os.makedirs(output_folder, exist_ok=True)
+    dalle_wrapper = DallEAPIWrapper(
+        model=model,
+        size=size,
+        quality=quality,
+    )
+
+    # Temporal solution to count the number of files generated
+    counts = 0
+
+    def image_generator(prompt: str) -> dict:
+        nonlocal counts
+        counts += 1
+
+        # Send the prompt to the DALL-E API
+        url = dalle_wrapper.run(prompt)
+
+        # Return the URL
+        if download == "disable":
+            return url
+
+        # Download the image
+        if chain_id is not None:
+            random_name = f"{chain_id}_{counts:04}_{str(uuid.uuid4())}.png"
+        else:
+            random_name = f"{counts:04}_{str(uuid.uuid4())}.png"
+        output_file = os.path.join(output_folder, random_name)
+        response = requests.get(url)
+        with open(output_file, "wb") as out:
+            out.write(response.content)
+        url = f"file://{os.path.abspath(output_file)}"
+        return url
+
+    return image_generator
 
 
 class _Prompts:
@@ -64,54 +119,51 @@ class _Prompts:
     # Prompts components
     # Writter
     writer_task = """
-    You are story writer. You help the user write a page of a story.
-    The workflow of the story writing is the following:
-    1. Understand the <context> for setting up an engaging story.
-    2. The user will respond with the <action> taken from the last page.
-    3. If it is the first page, the action should be "start".
-    4. Write the next page of the story from the <action> and the current <karma_points>. Write the consecuence of the action and current state in the page's <description>, a list of MAX_ACTIONS possible <next_action>s, and the <karma_points> change for the story.
-    5. Repeat the step 2 to 4 until you reach the max length of the story. If you reach the ending page, there should be only one <next_action> with the "End" action.
+    You are the narrator of a engaging story, and you are writing the next page of the story based on the user's action.
+    The workflow:
+    1. Understand the <context>.
+    2. The user will take an <action> from the last page.
+    3. The first page's action is "start".
+    4. A new page consists of the page's <description> explaining the <action> consecuence, a list of MAX_ACTIONS possible <next_action>s, and the <karma_points> change for the story.
+    5. Repeat the step 2 to 4 until you reach the MAX_PAGES pages of the story.
+    6. The last page is the end of the story, with only one <next_action>: the "End" action. The end page the one of the possible ends from the [ends] section.
     """
 
     writer_rules = """
-    The writer rules are:
-    1. The first page (number 1) always start with the "start" action. No other action is allowed.
-    2. The last page (number MAX_PAGES) always end by one "end" next_action. No other next_action is allowed.
+    Narrator rules are:
+    1. First page (number 1) always start with the "start" action. No other action is allowed.
+    2. Last page (number MAX_PAGES) always end by one "end" next_action. No other next_action is allowed.
     3. An action is a string of max 50 characters, with only the description of the action.
     4. A description is a string of max 250 characters.
-    5. The karma_points is a list of 4 float numbers, representing the change for the story in 4 dimensions:
-    - Technology. Higher is more advanced. Lower is no technology.
-    - Happiness. Higher is humans are happier. Lower is humans are unhappier.
-    - Safety. Higher is humans are safer. Lower is humans doesn't exist.
-    - Control. Higher is humans have more control. Lower is AGI has more control.
-    The values are between -1 and 1 and the story final karma_points is the aggregation of page karma_points changes.
-    6. The max length of the story is MAX_PAGES pages, so the last pages ends the story. Take in account the rythm of the story and the length of the pages, so the story is engaging.
+    5. The karma_points is a list of 4 float numbers, representing the change for the story in 4 dimensions: technology, happiness, safety, and control. The values are between -1 and 1 and the story final karma_points is the aggregation of page karma_points changes.
+    6. The max length of the story is MAX_PAGES pages, so the last pages concludes the story.
     7. Use the JSON output format defined in the [output_format] section.
     """
 
     writer_output_format = """
-    The output JSON format:
+    Output JSON format:
     - "description": The description of the current page.
     - "next_actions": The list of the next actions.
     - "karma_points": A list representing the karma points change for the page.
     """
 
     writer_knowledge = """
-    Knowledge for story inspiration:
-    - The writer knows the following characters: CHARACTERS
-    - The story categories: CATEGORIES
-    - Ispired by the following books: BOOKS
-    - Ispired by the following movies: MOVIES
-    - Ispired by the following anime: ANIMES
+    The narrator is a sarcastic AI with a subtle dark sense of humor. It knows at least the following characters: CHARACTERS.
+    """
+
+    writer_ends = """
+    The three possible ended are:
+    - Trasncendent: Humanity and AGI transcends to a new digital.
+    - Reverent: Technology is reverted to the stone age.
+    - Extintion: AGI is controlled by humans, ending in AI nuclear war.
     """
 
     drawer_task = """
     Generate a short prompt to generate an image based on:
     1. Scene description: {description}
     2. Use this style: STYLE
-    3. Generate consistent images with this seed: SEED
-    4. The length of the prompt should not be more than 1000 characters.
-    5. Not render any text in the image!!!
+    3. The length of the prompt should not be more than 1000 characters.
+    4. Do not add text to the image.
     """
 
     # Default prompt replacements
@@ -120,10 +172,6 @@ class _Prompts:
         "MAX_ACTIONS": "5",
         "STYLE": "90s aesthetics, with a dark style and pixel art graphics. Using the following colors: #000000, #ffffff, #ff0000, #00ff00, #0000ff, #ffff00, #ff00ff, #00ffff",
         "CHARACTERS": 'Sebastian, Fran',
-        "CATEGORIES": 'sci-fi, utopia, dystopia',
-        "BOOKS": '"1984", "Life 3.0: Alpha team tale"',
-        "MOVIES": '"The Matrix", "The Terminator"',
-        "ANIMES": '"Ghost in the Shell", "Serial Experiments Lain"',
         "SEED": "123456789",
     }
 
@@ -168,6 +216,9 @@ class ChainBuilder:
         Returns:
             RunnableSequence: A new chain instance.
         """
+
+        chain_id = str(uuid.uuid4())[0:8]
+
         prompt_replace = _Prompts.get_default_replace()
         for key in prompt_replace.keys():
             prompt_replace[key] = config.get("prompt_replace", key.lower(), fallback=prompt_replace[key])
@@ -176,12 +227,12 @@ class ChainBuilder:
         writer_chain = cls._build_writer(config, prompt_replace)
         # Drawer
         if config.get("chain", "drawer", fallback="disable") == "enable":
-            drawer = cls._build_drawer(config, prompt_replace)
+            drawer = cls._build_drawer(config, prompt_replace, chain_id=chain_id)
         else:
             drawer = RunnableLambda(lambda x: None)
         # Speaker
         if config.get("chain", "speaker", fallback="disable") == "enable":
-            speaker = cls._build_speaker(config, prompt_replace)
+            speaker = cls._build_speaker(config, prompt_replace, chain_id=chain_id)
         else:
             speaker = RunnableLambda(lambda x: None)
 
@@ -190,7 +241,10 @@ class ChainBuilder:
             RunnablePassthrough.assign(page=writer_chain)
             | {
                 "page": RunnableLambda(lambda x: x["page"]),
-                "image": RunnableLambda(lambda x: x["page"]) | drawer,
+                "image": RunnableBranch(
+                    (lambda x: x["page_number"] == int(config.get("writer", "max_pages", fallback="5")), RunnableLambda(lambda x: x["page"]) | drawer),
+                    RunnableLambda(lambda x: None)
+                ),
                 "audio": RunnableLambda(lambda x: {"description": x["page"]["description"], "action": x["action"], "page_number": x["page_number"]}) | speaker,
             }
         )
@@ -201,15 +255,17 @@ class ChainBuilder:
         # Writer Prompt
         task = _Prompts.get_prompt("writer_task", prompt_replace)
         rules = _Prompts.get_prompt("writer_rules", prompt_replace)
-        knowledge = _Prompts.get_prompt("writer_knowledge", prompt_replace)
+        personality = _Prompts.get_prompt("writer_knowledge", prompt_replace)
         output_format = _Prompts.get_prompt("writer_output_format", prompt_replace)
+        ends = _Prompts.get_prompt("writer_ends", prompt_replace)
         messages = [
             ("system",
                 "[task]: " + task + "\n"
                 "[rules]: " + rules + "\n"
-                "[knowledge]: " + knowledge + "\n"
+                "[personality]: " + personality + "\n"
                 "[output_format]: " + output_format + "\n"
                 "[context]: {context}\n"
+                "[ends]: " + ends + "\n"
              ),
             ("ai",
                 "I will write the next page of the story as "
@@ -232,7 +288,7 @@ class ChainBuilder:
         return writer_chain
 
     @classmethod
-    def _build_drawer(cls, config: ConfigParser, prompt_replace: dict = {}) -> RunnableSequence:
+    def _build_drawer(cls, config: ConfigParser, prompt_replace: dict = {}, chain_id: Optional[str] = None) -> RunnableSequence:
         # Drawer Prompt
         drawer_task = _Prompts.get_prompt("drawer_task", prompt_replace)
         # Drawer Chain
@@ -241,6 +297,8 @@ class ChainBuilder:
         drawer_model = config.get("drawer", "drawer_model", fallback="dall-e-3")
         size = config.get("drawer", "image_size", fallback="1024x1024")
         quality = config.get("drawer", "image_quality", fallback="standard")
+        download = config.get("drawer", "download", fallback="disable")
+        output_folder = config.get("drawer", "data", fallback="./tmp/images")
 
         drawer = (
             ChatPromptTemplate.from_template(drawer_task)
@@ -249,14 +307,14 @@ class ChainBuilder:
             )
             | StrOutputParser()
             | {
-                "url": RunnableLambda(lambda x: DallEAPIWrapper(model=drawer_model, size=size, quality=quality).run(x)),
+                "url": RunnableLambda(_dalle3_generator(model=drawer_model, size=size, quality=quality, download=download, output_folder=output_folder, chain_id=chain_id)),
                 "description": RunnablePassthrough(),
             }
         )
         return drawer
 
     @classmethod
-    def _build_speaker(cls, config: dict, prompt_replace: dict = {}) -> RunnableSequence:
+    def _build_speaker(cls, config: dict, prompt_replace: dict = {}, chain_id: Optional[str] = None) -> RunnableSequence:
 
         voice = config.get("speaker", "voice", fallback="en-US-Neural2-C")
         language = config.get("speaker", "language", fallback="en-US")
@@ -273,7 +331,7 @@ class ChainBuilder:
                 )
             )
             | {
-                "path": RunnableLambda(_gcp_tts_generator(voice, language, output_folder)),
+                "path": RunnableLambda(_gcp_tts_generator(voice=voice, language=language, output_folder=output_folder, chain_id=chain_id)),
                 "speech": RunnableLambda(lambda x: x.text),
             }
         )

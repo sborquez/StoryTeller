@@ -109,18 +109,21 @@ class GameOverState(State):
                 feedback = event.choice
                 logging.info("Feedback submitted.")
 
+                try:
+                    feedback = float(feedback)
+                except ValueError:
+                    feedback = 0.0
+
                 # Update the current path
+                path = self._state_machine.context.current_path
+                path.feedback(feedback)
+
+                # Send the feedback to the teller
+                tree = self._state_machine.context.story_tree
                 self._state_machine\
                     .context\
-                    .current_path\
-                    .feedback(feedback)
-
-                # TODO: Teller should use the feedback to update its algorithm
-                # path = self._state_machine.context.current_path
-                # self._state_machine\
-                #     .context\
-                #     .teller\
-                #     .receive_feedback(path)
+                    .teller\
+                    .review_story(path, tree)
 
                 # Reset the current path
                 self._state_machine.context.current_path = None

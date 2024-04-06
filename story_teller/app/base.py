@@ -309,15 +309,25 @@ class App(ABC):
         self._context = context
         self._state_machine = StateMachine(context)
 
-    @abstractmethod
     def run(self) -> None:
-        """Start the app."""
+        """Run the app.
+
+        This method is used to run the CLI app.
+        """
+        from story_teller.app.states import StateRegistry
         self._running = True
+        title_state = StateRegistry.get("TitleState")(self._state_machine)
+        self._state_machine.push(title_state)
+        self._start()
+        try:
+            self._loop()
+        except KeyboardInterrupt:
+            pass
+        self._clean_up()
 
     @abstractmethod
     def _start(self) -> None:
         """Start the app."""
-        pass
 
     @abstractmethod
     def _loop(self) -> None:

@@ -7,9 +7,26 @@
         {
             "name": "Play CLI",
             "type": "python",
+            // "type": "debugpy",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "module": "story_teller.app.cli",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "STORYTELLER_DEBUG": "true",
+                "STORYTELLER_CONFIG_FILE": "config.ini",
+                "LANGCHAIN_TRACING_V2": "false",
+                "LANGCHAIN_ENDPOINT": "https://api.smith.langchain.com"
+            }
+        },
+        {
+            "name": "Play GUI",
+            "type": "python",
+            // "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "module": "story_teller.app.gui",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {

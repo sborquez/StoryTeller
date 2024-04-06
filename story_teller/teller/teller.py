@@ -259,6 +259,27 @@ class Teller:
         # TODO: Handle media storage with a MediaRepository class
         return current_page, children
 
+    def review_story(self, path: Path, story_tree: StoryTree) -> None:
+        """Review the story.
+
+        Args:
+            path (Path): The current path of the story.
+
+        Returns:
+            Path: The updated path of the story.
+        """
+        feedback = path.get_score()
+        if feedback is None:
+            return
+        if feedback > 0.0:
+            source = story_tree.tree_source
+            if source is None:
+                source = "story_tree.json"
+            else:
+                # TODO: Find a better way to handle the source versioning
+                source = source.replace(".json", "_updated.json")
+            StoryTree.to_json(story_tree, source)
+
     @classmethod
     def from_config(cls, config: ConfigParser) -> Teller:
         """Create a new teller.
